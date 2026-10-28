@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Lifeline graba tu descripción de la emergencia para procesarla en el dispositivo.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Lifeline permite fotografiar la situación del paciente.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Lifeline permite adjuntar una fotografía a la consulta.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
