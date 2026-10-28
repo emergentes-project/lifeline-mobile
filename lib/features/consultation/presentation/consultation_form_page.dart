@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
+import '../data/ai/offline_audio_transcriber.dart';
 import '../data/local/private_media_store.dart';
 import '../domain/models/consultation_draft.dart';
 import 'patient_fields_page.dart';
@@ -19,11 +20,14 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   final description = TextEditingController();
   final recorder = AudioRecorder();
   final media = PrivateMediaStore();
+  final transcriber = OfflineAudioTranscriber();
   String? photoPath;
   String? audioPath;
   bool recording = false;
   bool helpRequested = false;
   bool busy = false;
+  String? transcription;
+  bool noVoiceDetected = false;
 
   @override
   void dispose() {
@@ -52,14 +56,22 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   }
 
   Future<void> toggleRecording() async {
+    if (busy) return;
     try {
       if (recording) {
+        setState(() => busy = true);
         final path = await recorder.stop();
         if (!mounted) return;
         setState(() {
           recording = false;
           audioPath = path;
+          busy = false;
         });
+        if (path == null) {
+          message('No se guardó el audio. Intenta grabar de nuevo.');
+        } else {
+          await transcribeAudio(path);
+        }
         return;
       }
       if (!await recorder.hasPermission()) {
@@ -70,15 +82,70 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       }
       final path = await media.newAudioPath();
       await recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc),
+        const RecordConfig(
+          encoder: AudioEncoder.wav,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
         path: path,
       );
-      if (mounted) setState(() => recording = true);
+      if (mounted) {
+        setState(() {
+          recording = true;
+          audioPath = null;
+          transcription = null;
+          noVoiceDetected = false;
+        });
+      }
     } catch (_) {
       if (mounted) {
-        setState(() => recording = false);
+        setState(() {
+          recording = false;
+          busy = false;
+        });
         message('No se pudo grabar el audio.');
       }
+    }
+  }
+
+  Future<void> transcribeAudio(String path) async {
+    if (busy || recording) return;
+    setState(() => busy = true);
+    try {
+      final text = await transcriber.transcribe(path);
+      if (!mounted) return;
+      if (text.isEmpty) {
+        setState(() {
+          transcription = null;
+          noVoiceDetected = true;
+        });
+        message(
+          'No se detectó voz. Puedes escribir la descripción o grabar de nuevo.',
+        );
+        return;
+      }
+      final current = description.text.trim();
+      final withoutPrevious =
+          transcription != null && current.endsWith(transcription!)
+          ? current.substring(0, current.length - transcription!.length).trim()
+          : current;
+      description.text = withoutPrevious.isEmpty
+          ? text
+          : '$withoutPrevious\n$text';
+      setState(() {
+        transcription = text;
+        noVoiceDetected = false;
+      });
+      message('Audio transcrito. Revisa y corrige el texto si es necesario.');
+    } catch (_) {
+      if (mounted) {
+        setState(() => noVoiceDetected = false);
+        message(
+          'No se pudo transcribir. Puedes volver a intentarlo o escribir la descripción.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
@@ -89,8 +156,8 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       photoPath: photoPath,
       audioPath: audioPath,
     );
-    if (recording) {
-      message('Detén la grabación antes de continuar.');
+    if (recording || busy) {
+      message('Espera a que termine la grabación y transcripción.');
       return;
     }
     if (!draft.hasInput) {
@@ -167,12 +234,27 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                   ListTile(
                     leading: const Icon(Icons.audio_file),
                     title: const Text('Audio grabado'),
-                    subtitle: const Text(
-                      'Se transcribirá en la siguiente etapa',
+                    subtitle: Text(
+                      busy
+                          ? 'Transcribiendo sin internet...'
+                          : noVoiceDetected
+                          ? 'No se detectó voz; toca para reintentar'
+                          : transcription == null
+                          ? 'Toca para intentar transcribir de nuevo'
+                          : 'Texto agregado a la descripción',
                     ),
+                    onTap: busy || recording
+                        ? null
+                        : () => transcribeAudio(audioPath!),
                     trailing: IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => setState(() => audioPath = null),
+                      onPressed: busy || recording
+                          ? null
+                          : () => setState(() {
+                              audioPath = null;
+                              transcription = null;
+                              noVoiceDetected = false;
+                            }),
                     ),
                   ),
                 if (photoPath != null)

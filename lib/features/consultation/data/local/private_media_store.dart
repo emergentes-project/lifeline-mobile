@@ -23,5 +23,5 @@ class PrivateMediaStore {
   }
 
   Future<String> newAudioPath() async =>
-      '${await directory()}${Platform.pathSeparator}voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
+      '${await directory()}${Platform.pathSeparator}voice_${DateTime.now().microsecondsSinceEpoch}.wav';
 }

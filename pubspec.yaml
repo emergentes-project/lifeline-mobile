@@ -37,6 +37,7 @@ dependencies:
   geolocator: ^14.1.2
   path_provider: ^2.1.6
   record: ^6.2.1
+  sherpa_onnx: ^1.13.8
   crypto: ^3.0.6
 
   # The following adds the Cupertino Icons font to your application.
@@ -64,6 +65,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/models/whisper_tiny/tiny-encoder.int8.onnx
+    - assets/models/whisper_tiny/tiny-decoder.int8.onnx
+    - assets/models/whisper_tiny/tiny-tokens.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:
