@@ -1,0 +1,1758 @@
+[
+  {
+    "id": "post_sismo_01_measures_basic",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Acércate solo si el entorno es seguro, solicita ayuda profesional mediante la app y comprueba sin demora si la persona responde y respira normalmente.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_measures_conditional_01",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si hay escombros, cables, fuego u otro peligro, no te expongas; busca un lugar seguro antes de acercarte.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_measures_conditional_02",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si la persona no responde al hablarle y tocarle suavemente, comprueba si respira normalmente. Los jadeos aislados no cuentan como respiración normal.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_measures_conditional_03",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si sospechas lesión de cabeza, cuello o espalda, evita moverla salvo que el lugar sea peligroso o que debas realizar una maniobra para salvarle la vida.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_medical_indications_basic",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Arrodíllate junto a la persona en un lugar seguro, háblale en voz alta y toca suavemente su hombro para comprobar respuesta. Mira si el pecho se mueve y si respira con normalidad. Pide a alguien cercano que solicite ayuda mediante la app y que busque un desfibrilador si hay uno disponible.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_medical_indications_conditional_01",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si es una persona adulta que no respira normalmente, colócala boca arriba sobre una superficie firme, pon el talón de una mano en el centro del pecho y la otra encima. Con los brazos rectos, presiona fuerte y rápido, dejando que el pecho vuelva a subir tras cada compresión. Si no sabes dar ventilaciones, continúa con compresiones. Enciende el desfibrilador y sigue sus instrucciones si está disponible. La RCP en niños y lactantes tiene diferencias: solicita guía profesional para esa edad sin retrasar la ayuda.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_medical_indications_conditional_02",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si respira pero sigue inconsciente, observa continuamente su respiración. Si no sospechas lesión de columna y hay riesgo de que vómito o sangre obstruyan la vía aérea, colócala en posición de recuperación. Si sospechas lesión de columna, evita moverla y sigue las indicaciones del personal profesional conectado.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_medical_indications_conditional_03",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si recupera la conciencia, ayúdala a permanecer quieta y en una posición cómoda. Habla con ella y vuelve a comprobar regularmente que responde y respira normalmente; comunica cualquier cambio.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_01_professional_help",
+    "card_id": "post_sismo_01",
+    "card_number": 1,
+    "card_title": "Persona inconsciente o que no respira normalmente",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app, tanto si respira como si no, porque la pérdida de conciencia exige valoración urgente.",
+    "source_ids": [
+      "source_001",
+      "source_002",
+      "source_003",
+      "source_004"
+    ]
+  },
+  {
+    "id": "post_sismo_02_measures_basic",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Identifica de dónde sale la sangre, protege tus manos del contacto directo y solicita ayuda profesional mediante la app sin esperar a que aparezca debilidad o confusión.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_measures_conditional_01",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si la sangre sale de forma continua o abundante, empapa rápidamente los apósitos, o la persona está pálida, fría, confundida o débil, trátalo como una emergencia y solicita ayuda inmediata.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_measures_conditional_02",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si puedes hacerlo, usa guantes o una barrera limpia antes de tocar la sangre. Pide a otra persona que solicite ayuda mientras atiendes la herida.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_medical_indications_basic",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Descubre solo lo necesario para localizar la herida. Coloca una gasa o tela limpia directamente sobre el punto que sangra y presiona con la palma de la mano de forma firme y continua. Pide a otra persona que solicite ayuda mediante la app y mantén la presión mientras llega.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_medical_indications_conditional_01",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si la tela se empapa, añade otra encima sin quitar la primera ni soltar la presión. Si el sangrado se detiene, fija el apósito con una venda sin apretarla tanto que la mano o el pie se enfríen, se entumezcan o cambien de color.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_medical_indications_conditional_02",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay un objeto incrustado, no lo extraigas: presiona alrededor y estabilízalo hasta recibir atención.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_medical_indications_conditional_03",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si aparecen signos de shock, evita que se levante, cúbrela con una manta o ropa seca y habla con calma mientras compruebas si sigue respondiendo y respirando. No le des comida ni bebida si está confundida, inconsciente o puede necesitar atención urgente.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_medical_indications_conditional_04",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 4,
+    "text": "Si la hemorragia de una extremidad no cede con presión directa, solicita instrucciones inmediatas al profesional de la app. El uso de torniquete o empaquetamiento exige formación y condiciones específicas; el modelo no debe improvisar esos procedimientos.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_02_professional_help",
+    "card_id": "post_sismo_02",
+    "card_number": 2,
+    "card_title": "Hemorragia intensa o signos de shock",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app ante sangrado intenso o signos de shock, incluso si la presión parece haber detenido el sangrado.",
+    "source_ids": [
+      "source_005",
+      "source_006",
+      "source_007"
+    ]
+  },
+  {
+    "id": "post_sismo_03_measures_basic",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Prioriza tu seguridad y comunica la ubicación de la persona atrapada mediante la app. Mantén contacto verbal si es posible y observa si responde y respira.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_measures_conditional_01",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si el edificio, los escombros o el terreno son inestables, no entres ni intentes levantar una carga que pueda caer otra vez. Comunica la ubicación y las condiciones de acceso mediante la app.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_measures_conditional_02",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si puedes hablar con la persona desde un lugar seguro, pregunta si responde, si respira con dificultad y qué parte del cuerpo está atrapada. Pídele que evite movimientos innecesarios.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_measures_conditional_03",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si ya fue liberada, no supongas que está fuera de peligro aunque pueda hablar o mover la extremidad: informa al profesional cuánto tiempo estuvo atrapada, si se conoce.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_medical_indications_basic",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Habla con la persona desde un lugar seguro, indícale que la ayuda está en camino y pídele que permanezca lo más quieta posible. Comunica su ubicación exacta mediante la app. Si puedes alcanzarla sin exponerte, protégela del frío con una manta o ropa y sostén la parte lesionada sin enderezarla.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_medical_indications_conditional_01",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si hay sangrado accesible y puedes atenderlo sin riesgo, presiona directamente con material limpio, siguiendo también la ficha de hemorragia.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_medical_indications_conditional_02",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si la extremidad está deformada o duele intensamente, coloca ropa doblada o una manta alrededor para apoyarla en la posición encontrada. No tires de ella ni intentes alinearla.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_medical_indications_conditional_03",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si la persona está fría, pálida, confusa o cambia su respiración, comunícalo de inmediato al profesional y permanece hablándole para detectar si deja de responder. No intentes una liberación que ponga en riesgo a otra persona ni administres líquidos o medicamentos como sustituto del rescate.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_03_professional_help",
+    "card_id": "post_sismo_03",
+    "card_number": 3,
+    "card_title": "Persona atrapada o con una extremidad aplastada",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app. La persona necesita rescate seguro y valoración médica aun después de salir de los escombros.",
+    "source_ids": [
+      "source_008",
+      "source_009",
+      "source_010"
+    ]
+  },
+  {
+    "id": "post_sismo_04_measures_basic",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Después de un golpe en la cabeza o ante sospecha de lesión de columna, evita movimientos innecesarios y observa conciencia, respiración y capacidad de hablar o mover las extremidades.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_measures_conditional_01",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si hubo caída, golpe fuerte o aplastamiento y la persona presenta dolor de cuello, debilidad, adormecimiento o dificultad para moverse, considera posible lesión de columna y pídele que no se levante ni gire.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_measures_conditional_02",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si tras un golpe en la cabeza hay pérdida de conciencia, somnolencia creciente, convulsión, vómitos, confusión, dificultad para hablar o caminar, sangrado por el oído o salida de líquido claro por nariz u oído, solicita ayuda inmediata.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_measures_conditional_03",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si no hay síntomas graves aparentes, pregunta igualmente por el mecanismo del golpe y vigila si aparecen cambios; no conviertas la ausencia inicial de síntomas en una conclusión de seguridad.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_medical_indications_basic",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Pide a la persona que no se levante ni gire la cabeza. Déjala en la posición encontrada, salvo peligro inmediato o necesidad de realizar una maniobra para salvarle la vida. Habla con ella para comprobar que sigue respondiendo y mantenla abrigada mientras llega ayuda.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_medical_indications_conditional_01",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si sospechas lesión de cuello o columna, pide a otras personas que no la levanten ni le retiren un casco. No intentes enderezar el cuello ni cambiar su posición para examinarla.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_medical_indications_conditional_02",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay una herida en el cuero cabelludo, coloca una tela limpia sobre el punto que sangra y presiona suavemente solo si no hay hundimiento ni un objeto incrustado. En esos casos, cubre alrededor sin presionar el área lesionada.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_medical_indications_conditional_03",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si la persona deja de responder o respirar normalmente, aplica la ficha de persona inconsciente y comunica el cambio de inmediato.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_04_professional_help",
+    "card_id": "post_sismo_04",
+    "card_number": 4,
+    "card_title": "Golpe en la cabeza o posible lesión de cuello o columna",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí mediante la app ante sospecha de lesión de columna o síntomas tras un golpe en la cabeza; de forma inmediata si aparece cualquiera de las señales graves indicadas.",
+    "source_ids": [
+      "source_011",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_05_measures_basic",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Deja de usar la extremidad lesionada, evita que soporte peso y observa su forma, color, temperatura y sensibilidad sin forzar ningún movimiento.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_measures_conditional_01",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si hay dolor, hinchazón, deformidad, incapacidad para usar la extremidad o se oyó un chasquido, trátala como posible fractura aunque la persona todavía pueda moverla.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_measures_conditional_02",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay herida abierta, hueso visible, color anormal, frialdad o pérdida de sensibilidad más allá de la lesión, informa que es una señal de urgencia.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_medical_indications_basic",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Pide a la persona que deje de usar la extremidad. Apóyala con ropa doblada o una manta en la posición encontrada para que no tenga que sostener su peso. No intentes acomodar huesos o articulaciones.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_medical_indications_conditional_01",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si la lesión es cerrada, aplica una bolsa fría envuelta en tela sobre la zona dolorosa por un periodo breve y retírala si aumenta el dolor. Mantén la extremidad apoyada; no pidas que camine ni que la mueva para comprobarla.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_medical_indications_conditional_02",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay herida abierta o sangrado, cubre con material limpio y controla la hemorragia sin presionar directamente sobre hueso expuesto. Usa además la ficha de hemorragia si el sangrado es intenso.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_medical_indications_conditional_03",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si la articulación o el hueso parecen fuera de lugar y necesitas evitar que se muevan mientras llega ayuda, coloca soportes acolchados a ambos lados y fíjalos suavemente sin apretar ni cambiar la posición. Detente si la maniobra aumenta el dolor; no intentes reducir la lesión.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_05_professional_help",
+    "card_id": "post_sismo_05",
+    "card_number": 5,
+    "card_title": "Fractura, luxación o lesión grave de una extremidad",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí mediante la app. Solicítala con urgencia ante fractura abierta, deformidad marcada, pérdida de sensibilidad o circulación, sangrado importante, dolor intenso o múltiples lesiones.",
+    "source_ids": [
+      "source_008",
+      "source_013"
+    ]
+  },
+  {
+    "id": "post_sismo_06_measures_basic",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Separa a la persona de la fuente de calor, humo o electricidad solo cuando puedas hacerlo sin exponerte. Observa de inmediato su respiración y nivel de respuesta.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_measures_conditional_01",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si hay fuego o humo, lleva a la persona a un lugar con aire limpio solo si es seguro hacerlo. Si sigue en contacto con electricidad, no la toques hasta que la fuente esté desconectada.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_measures_conditional_02",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay quemadura en cara, manos, pies o genitales, una zona extensa, ampollas importantes o dificultad respiratoria, solicita ayuda inmediata.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_medical_indications_basic",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Una vez que la fuente de peligro esté controlada, aparta a la persona del calor o humo, quita con cuidado joyas y ropa suelta cercanas a la quemadura y protege la piel lesionada. No desprendas ropa pegada, no uses hielo directo y no revientes ampollas.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_medical_indications_conditional_01",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si la quemadura es térmica y la zona es segura, coloca la parte afectada bajo agua corriente limpia y fresca durante unos veinte minutos. Si no hay agua corriente limpia, utiliza una compresa fresca y limpia. No frotes ni intentes limpiar una quemadura grave.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_medical_indications_conditional_02",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si la quemadura ya se enfrió, cúbrela de forma suelta con un apósito limpio que no se adhiera o una tela limpia. No ajustes una venda alrededor de una extremidad quemada porque puede hincharse.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_medical_indications_conditional_03",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si hubo descarga eléctrica, corta la corriente antes de acercarte. Una vez que sea seguro tocar a la persona, comprueba si responde y respira. Enfría una quemadura visible con agua fresca y mantenla cubierta de forma suelta. Una lesión pequeña en la piel no descarta daño interno.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_medical_indications_conditional_04",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 4,
+    "text": "Si hubo inhalación de humo y aparece tos persistente, voz ronca, quemadura facial o dificultad para respirar, usa también la ficha respiratoria.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_06_professional_help",
+    "card_id": "post_sismo_06",
+    "card_number": 6,
+    "card_title": "Quemaduras, descarga eléctrica o exposición a humo",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app ante descarga eléctrica, inhalación de humo, dificultad respiratoria, quemadura extensa o en zonas sensibles. En quemaduras pequeñas, solicita valoración si empeoran o aparecen signos de infección.",
+    "source_ids": [
+      "source_014",
+      "source_015"
+    ]
+  },
+  {
+    "id": "post_sismo_07_measures_basic",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Aparta a la persona de la exposición sospechosa si es seguro hacerlo, permite que respire aire limpio y solicita ayuda profesional mediante la app.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_measures_conditional_01",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si la exposición ocurrió en un espacio cerrado con humo o equipos de combustión, no vuelvas a entrar en el recinto después de salir.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_measures_conditional_02",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si varias personas del mismo lugar presentan dolor de cabeza, mareo, náuseas o confusión, considera posible exposición a monóxido de carbono aunque no haya olor.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_measures_conditional_03",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si la persona no puede hablar en frases completas, respira con mucho esfuerzo, tiene coloración azulada, está somnolienta o empeora, solicita ayuda inmediata.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_medical_indications_basic",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Lleva a la persona a aire limpio sin exponerte, afloja la ropa ajustada alrededor del cuello y pecho, ayúdala a mantenerse en la postura en la que respira mejor y quédate con ella para detectar cambios. No regreses a la zona contaminada.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_medical_indications_conditional_01",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si está consciente y respira, anímala a respirar con calma y a evitar esfuerzos. Si tiene un medicamento de rescate prescrito para una enfermedad respiratoria conocida, comunícalo al profesional conectado antes de ayudarla a usarlo; no compartas medicamentos de otra persona.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_medical_indications_conditional_02",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si deja de responder y no respira normalmente, sigue la ficha de reanimación.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_medical_indications_conditional_03",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si se sospecha monóxido de carbono, mantén a todas las personas expuestas fuera del recinto y comunica al profesional cuántas presentan síntomas, qué equipo de combustión estaba encendido y cuánto tiempo estuvieron allí. No esperes a que un detector confirme la exposición.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_07_professional_help",
+    "card_id": "post_sismo_07",
+    "card_number": 7,
+    "card_title": "Dificultad para respirar, incluido polvo o monóxido de carbono",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app ante dificultad respiratoria o sospecha de monóxido de carbono, aun si la persona mejora al salir del lugar.",
+    "source_ids": [
+      "source_016",
+      "source_017",
+      "source_018"
+    ]
+  },
+  {
+    "id": "post_sismo_08_measures_basic",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Lávate las manos antes de tocar la herida, usa una barrera limpia si está disponible y evalúa profundidad, sangrado y contaminación.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_measures_conditional_01",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si el sangrado es abundante, primero aplica la ficha de hemorragia; no retrases su control por limpiar la herida.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_measures_conditional_02",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si el sangrado es leve, lávate las manos, usa una barrera si la tienes y comprueba si hay tierra, escombros, un objeto incrustado o una herida profunda.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_measures_conditional_03",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si la herida ocurrió con un objeto sucio o hay dudas sobre la vacunación antitetánica, comunica ese dato al profesional; la app no debe decidir por sí sola si corresponde una vacuna.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_medical_indications_basic",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Lávate las manos, detén primero cualquier sangrado con presión, enjuaga la herida leve con agua segura y cúbrela con una gasa o apósito limpio. Evita verter alcohol u otros líquidos irritantes en su interior.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_medical_indications_conditional_01",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si es superficial y el sangrado está controlado, limpia suavemente la piel de alrededor con agua y jabón. Seca alrededor sin frotar la herida y cambia la cobertura cuando se ensucie o moje.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_medical_indications_conditional_02",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay un objeto incrustado, no lo retires ni explores dentro de la herida. Cubre alrededor sin presionar el objeto.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_medical_indications_conditional_03",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si aparecen enrojecimiento que aumenta, hinchazón, secreción, fiebre o dolor creciente, retira un apósito sucio, lava suavemente con agua segura y cubre con material limpio mientras solicitas valoración. No exprimas la herida.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_medical_indications_conditional_04",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 4,
+    "text": "Si no hay agua segura, evita usar agua posiblemente contaminada para limpiar la herida; protege la zona con material limpio y pide orientación.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_08_professional_help",
+    "card_id": "post_sismo_08",
+    "card_number": 8,
+    "card_title": "Cortes y otras heridas",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí mediante la app si es profunda, extensa, muy contaminada, contiene un objeto, sangra de forma persistente, muestra infección o requiere evaluar protección contra tétanos. Una herida superficial que mejora puede cuidarse localmente según estas medidas.",
+    "source_ids": [
+      "source_019",
+      "source_020",
+      "source_021"
+    ]
+  },
+  {
+    "id": "post_sismo_09_measures_basic",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Retira a la persona de la exposición al calor o al frío, busca un lugar seguro y observa si está despierta, orientada y puede beber.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_measures_conditional_01",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si hubo exposición a calor, observa sed, sudoración intensa, mareo, debilidad y cambios de conciencia. Llévala a sombra o a un lugar fresco si es seguro.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_measures_conditional_02",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hubo exposición a frío, observa temblores, piel fría, somnolencia, confusión o habla dificultosa. Llévala a un lugar resguardado.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_measures_conditional_03",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si hubo poca ingesta de agua, diarrea o vómitos, pregunta si puede beber y si está orinando. La confusión, incapacidad para tragar o pérdida de conciencia indican urgencia.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_medical_indications_basic",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Lleva a la persona a un lugar protegido de la temperatura extrema, ayúdala a descansar y observa si está despierta, orientada y puede tragar antes de ofrecerle líquidos.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_medical_indications_conditional_01",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si está despierta, orientada y puede tragar, ofrece agua segura o solución de rehidratación en sorbos pequeños y frecuentes. No la obligues a beber de una vez. Detente y solicita ayuda si vomita repetidamente o no puede retener líquidos.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_medical_indications_conditional_02",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si está acalorada, llévala a la sombra, retira exceso de ropa y moja la piel con agua fresca o coloca paños frescos en cuello y axilas. Abanícala mientras se enfría. Si está confundida o pierde la conciencia, solicita atención inmediata y continúa enfriándola sin darle líquidos por boca.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_medical_indications_conditional_03",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si está fría o mojada, retira la ropa mojada, seca la piel, ponle ropa seca y envuélvela en mantas. Cubre cabeza y cuello y sepárala del suelo frío con cartón o mantas. Caliéntala gradualmente; no frotes sus extremidades ni uses calor directo intenso.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_medical_indications_conditional_04",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 4,
+    "text": "Si está inconsciente, confundida o no puede tragar, no le des líquidos ni alimentos por boca.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_09_professional_help",
+    "card_id": "post_sismo_09",
+    "card_number": 9,
+    "card_title": "Deshidratación, agotamiento por calor o hipotermia",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app ante confusión, pérdida de conciencia, respiración anormal, incapacidad para beber o temperatura corporal aparentemente extrema. Si la deshidratación no mejora o afecta a una persona vulnerable, solicita valoración.",
+    "source_ids": [
+      "source_022",
+      "source_023",
+      "source_024",
+      "source_025"
+    ]
+  },
+  {
+    "id": "post_sismo_10_measures_basic",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Deja de consumir el agua o alimento sospechoso, usa agua segura y presta atención a signos de deshidratación.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_measures_conditional_01",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si el suministro de agua pudo contaminarse después del sismo, usa agua segura también para preparar alimentos y lavarte las manos.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_measures_conditional_02",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay diarrea o vómitos, pregunta si la persona puede retener líquidos y observa sed intensa, poca orina, somnolencia o mareo. Pregunta si hay sangre en las heces.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_measures_conditional_03",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si se trata de un niño pequeño, adulto mayor o persona con enfermedad crónica, considera que puede deshidratarse o complicarse más rápido.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_medical_indications_basic",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Retira el agua o alimento sospechoso, lávate las manos con agua segura y jabón antes de preparar alimentos y ofrece reposo. Prioriza la reposición de líquidos seguros cuando la persona esté despierta y pueda beber.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_medical_indications_conditional_01",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si está consciente y puede beber, ofrece solución de rehidratación oral preparada según el envase o agua segura en sorbos pequeños y frecuentes. Usa agua segura también para preparar alimentos y lavar utensilios; no pruebes alimentos dudosos para comprobar si son seguros.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_medical_indications_conditional_02",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si vomita al intentar beber, prueba cantidades más pequeñas; si sigue sin retener líquidos, solicita atención.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_medical_indications_conditional_03",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si hay sangre en las heces, somnolencia marcada, muy poca orina o dolor abdominal intenso, suspende cualquier alimento sospechoso, continúa ofreciendo sorbos de solución de rehidratación solo si puede tragar y solicita ayuda profesional sin demora.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_medical_indications_conditional_04",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 4,
+    "text": "No recomiendes antibióticos, antidiarreicos ni dosis sin indicación profesional.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_10_professional_help",
+    "card_id": "post_sismo_10",
+    "card_number": 10,
+    "card_title": "Diarrea o vómitos asociados con agua o alimentos inseguros",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí mediante la app si hay sangre en heces, vómitos persistentes, incapacidad para retener líquidos, signos de deshidratación o una persona vulnerable afectada. Solicita ayuda urgente si hay confusión, pérdida de conciencia o deterioro rápido.",
+    "source_ids": [
+      "source_026",
+      "source_027",
+      "source_028",
+      "source_029"
+    ]
+  },
+  {
+    "id": "post_sismo_11_measures_basic",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Identifica la enfermedad, el tratamiento habitual y cuándo recibió la última dosis o sesión. Conserva la receta o el envase para comunicar la información al profesional.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_measures_conditional_01",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si falta un medicamento o se interrumpió un servicio, registra cuánto tiempo lleva la interrupción y comunica el dato mediante la app.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_measures_conditional_02",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hay diabetes, necesidad de diálisis u otra terapia indispensable, comunica la interrupción cuanto antes aunque la persona parezca estable.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_measures_conditional_03",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si hay debilidad intensa, confusión, dificultad para respirar, dolor torácico, convulsiones u otra descompensación, trata la situación como urgente.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_medical_indications_basic",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Reúne el envase o la receta, anota el nombre del tratamiento, la última dosis o sesión y el tiempo de interrupción. Comparte esos datos mediante la app para que el profesional indique cómo continuar. No cambies dosis ni sustituyas medicamentos por tu cuenta.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_medical_indications_conditional_01",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si el medicamento prescrito está disponible y se conservó correctamente, continúa únicamente conforme a la pauta ya indicada por su profesional tratante.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_medical_indications_conditional_02",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si se perdió, dañó o no se puede conservar adecuadamente, separa ese medicamento del que está utilizable, conserva el envase para identificarlo y pide instrucciones individuales. No dupliques la dosis omitida ni uses el medicamento de otra persona.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_medical_indications_conditional_03",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si se interrumpió la diálisis u otro procedimiento, comunica la última sesión, la próxima fecha prevista y cualquier síntoma nuevo. Pide al profesional que indique dónde y cuándo reanudarlo; no intentes reemplazarlo con medidas caseras.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_11_professional_help",
+    "card_id": "post_sismo_11",
+    "card_number": 11,
+    "card_title": "Interrupción de medicamentos o tratamientos crónicos",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí mediante la app para resolver la interrupción; con urgencia si es un tratamiento indispensable, no puede reanudarse pronto o aparecen síntomas.",
+    "source_ids": [
+      "source_025",
+      "source_030",
+      "source_008"
+    ]
+  },
+  {
+    "id": "post_sismo_12_measures_basic",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Prioriza a la persona lesionada: comprueba que el lugar sea seguro, solicita ayuda inmediata y observa respiración, conciencia y sangrado.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_measures_conditional_01",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si la parte separada no está a la vista, no retrases la atención por buscarla.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_measures_conditional_02",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si está pálida, fría, confusa o muy débil, considera también la ficha de shock. Observa respiración y conciencia mientras llega ayuda.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_medical_indications_basic",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Coloca una gasa o tela limpia sobre el extremo lesionado y presiónala firmemente para controlar el sangrado. Mantén a la persona abrigada y acompañada, comprueba que siga respondiendo y respirando, y prioriza su atención sobre la búsqueda de la parte separada.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_medical_indications_conditional_01",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si el sangrado es intenso, aplica también las indicaciones de la ficha de hemorragia y comunica la gravedad al profesional.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_medical_indications_conditional_02",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si se recupera la parte separada, envuélvela en material limpio, colócala en una bolsa limpia y cerrada, y pon esa bolsa dentro de otra bolsa o recipiente con agua y hielo. Evita que el tejido toque directamente el hielo o el agua. Entrégala junto con la persona al equipo profesional.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_medical_indications_conditional_03",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si no se encuentra la parte separada, continúa controlando el sangrado y buscando atención; no demores la ayuda.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_12_professional_help",
+    "card_id": "post_sismo_12",
+    "card_number": 12,
+    "card_title": "Pérdida traumática de una extremidad",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app, aun si el sangrado parece controlado.",
+    "source_ids": [
+      "source_010",
+      "source_006"
+    ]
+  },
+  {
+    "id": "post_sismo_13_measures_basic",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "measures",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Determina si el sangrado viene de la nariz o del oído, pregunta por un golpe reciente y observa conciencia, respiración y otros síntomas neurológicos.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_measures_conditional_01",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si sangra por el oído o sale líquido claro por nariz u oído después de un golpe, considera posible lesión de cabeza y usa también la ficha correspondiente. Pregunta por pérdida de conciencia, vómitos, confusión, alteraciones de visión o audición y dolor de cuello.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_measures_conditional_02",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si sangra solo por la nariz, pregunta si hubo golpe en la cabeza o cara y si el sangrado es abundante o no se detiene.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_measures_conditional_03",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "measures",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si no se conoce el origen del sangrado o la persona no puede responder, no asumas que se trata de una hemorragia nasal simple.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_medical_indications_basic",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "medical_indications",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sienta a la persona si puede hacerlo sin dolor ni sospecha de lesión de cuello. Averigua si hubo un golpe y mantén disponible una tela limpia para recoger la sangre sin introducirla en el oído. No inclines la cabeza hacia atrás.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_medical_indications_conditional_01",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 1,
+    "text": "Si el sangrado nasal no se asocia a lesión de cabeza ni a otros signos graves, inclina ligeramente la cabeza hacia adelante y presiona con pulgar e índice la parte blanda de la nariz de forma continua durante diez a quince minutos. Pídele que respire por la boca y no suelte la presión para comprobar repetidamente si ya paró.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_medical_indications_conditional_02",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 2,
+    "text": "Si hubo golpe importante o posible lesión de cuello, deja a la persona en la posición encontrada salvo peligro inmediato. Coloca una tela limpia por fuera del oído para recoger la sangre sin taparlo ni presionarlo. No intentes bloquear la salida de sangre o líquido.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_medical_indications_conditional_03",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "medical_indications",
+    "kind": "conditional",
+    "ordinal": 3,
+    "text": "Si pierde la conciencia o deja de respirar normalmente, aplica la ficha de persona inconsciente y comunica el cambio de inmediato.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  },
+  {
+    "id": "post_sismo_13_professional_help",
+    "card_id": "post_sismo_13",
+    "card_number": 13,
+    "card_title": "Sangrado abundante por nariz u orejas",
+    "section": "professional_help",
+    "kind": "basic",
+    "ordinal": 0,
+    "text": "Sí, inmediatamente mediante la app si sangra por el oído, hubo golpe en la cabeza, sale líquido claro o el sangrado nasal es abundante o persistente. Un sangrado nasal leve que se detiene y no se relaciona con trauma puede vigilarse.",
+    "source_ids": [
+      "source_031",
+      "source_012"
+    ]
+  }
+]

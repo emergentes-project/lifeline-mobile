@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "package_id": "lifeline_post_sismo",
+  "version": "1.0.0",
+  "locale": "es-PE",
+  "card_count": 13,
+  "source_count": 31,
+  "chunk_count": 118,
+  "response_sections": [
+    "Medidas a tomar",
+    "Indicaciones médicas a ejecutar",
+    "¿Es necesario pedir ayuda profesional?"
+  ],
+  "common_safety_rule": "evaluar primero la seguridad del lugar, el estado de conciencia, la respiración y el sangrado intenso. Si una respuesta necesaria se desconoce, preguntar antes de elegir una rama; si la persona no puede responder o hay una señal grave, priorizar la solicitud inmediata de ayuda. No inferir un diagnóstico a partir de una foto o de datos incompletos, ni proponer medicamentos, dosis o procedimientos reservados a personal capacitado. Las ramas de primeros auxilios pueden coexistir: por ejemplo, una amputación también puede requerir control de hemorragia. La urgencia nunca debe quedar oculta en el último apartado.",
+  "source_scope": "card",
+  "source_markdown": "assets/medical_bases/fichas_post_sismo_v1.md",
+  "source_json": "assets/medical_bases/fichas_post_sismo_v1.json",
+  "search_index": "bm25_lexical_v1"
+}

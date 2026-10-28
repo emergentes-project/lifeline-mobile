@@ -1,0 +1,219 @@
+[
+  {
+    "id": "source_001",
+    "institution": "MINSA",
+    "title": "MINSA, primeros auxilios en desastres",
+    "url": "https://www.gob.pe/16784",
+    "edition": null
+  },
+  {
+    "id": "source_002",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, persona inconsciente",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/unresponsive-and-breathing-person",
+    "edition": null
+  },
+  {
+    "id": "source_003",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, RCP",
+    "url": "https://www.redcross.org/take-a-class/cpr/performing-cpr/cpr-steps",
+    "edition": null
+  },
+  {
+    "id": "source_004",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, RCP solo con compresiones",
+    "url": "https://production.redcross.org/take-a-class/cpr/performing-cpr/hands-only-cpr",
+    "edition": null
+  },
+  {
+    "id": "source_005",
+    "institution": "MINSA",
+    "title": "MINSA, hemorragias",
+    "url": "https://www.gob.pe/16802",
+    "edition": null
+  },
+  {
+    "id": "source_006",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, hemorragia grave",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/bleeding-life-threatening-external",
+    "edition": null
+  },
+  {
+    "id": "source_007",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, shock",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/shock",
+    "edition": null
+  },
+  {
+    "id": "source_008",
+    "institution": "MINSA y SAMU",
+    "title": "MINSA y SAMU, actuación ante sismos",
+    "url": "https://www.gob.pe/institucion/minsa/noticias/1414747-ministerio-de-salud-brinda-checklist-de-como-actuar-ante-un-sismo-y-que-elementos-debe-tener-tu-mochila-de-emergencia",
+    "edition": null
+  },
+  {
+    "id": "source_009",
+    "institution": "OMS",
+    "title": "OMS, lesiones por terremotos",
+    "url": "https://www.emro.who.int/media/news/for-every-2-injuries-due-to-the-syria-earthquake-a-death-has-occurred-who-trauma-experts-explain-why.html",
+    "edition": null
+  },
+  {
+    "id": "source_010",
+    "institution": "St John",
+    "title": "St John, lesiones por aplastamiento",
+    "url": "https://www.stjohn.org.nz/first-aid/first-aid-library/bleeding/",
+    "edition": null
+  },
+  {
+    "id": "source_011",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, cabeza, cuello y columna",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/head-neck-spinal-injury",
+    "edition": null
+  },
+  {
+    "id": "source_012",
+    "institution": "NHS",
+    "title": "NHS, lesión de cabeza",
+    "url": "https://www.nhs.uk/conditions/head-injury-and-concussion/",
+    "edition": null
+  },
+  {
+    "id": "source_013",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, fracturas",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/fractures",
+    "edition": null
+  },
+  {
+    "id": "source_014",
+    "institution": "MINSA y SAMU",
+    "title": "MINSA y SAMU, RCP y quemaduras",
+    "url": "https://www.gob.pe/institucion/minsa/noticias/1021672-samu-brinda-recomendaciones-de-primeros-auxilios-ante-casos-de-urgencias-y-emergencias-medicas",
+    "edition": null
+  },
+  {
+    "id": "source_015",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, quemaduras",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/burns",
+    "edition": null
+  },
+  {
+    "id": "source_016",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, dificultad respiratoria",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/respiratory-distress-trouble-breathing",
+    "edition": null
+  },
+  {
+    "id": "source_017",
+    "institution": "CDC",
+    "title": "CDC, monóxido de carbono tras desastres",
+    "url": "https://www.cdc.gov/carbon-monoxide/hcp/clinical-guidance/index.html",
+    "edition": null
+  },
+  {
+    "id": "source_018",
+    "institution": "MINSA",
+    "title": "MINSA, salud tras un sismo",
+    "url": "https://www.gob.pe/institucion/minsa/noticias/1420681-minsa-recuerda-a-la-poblacion-que-la-preparacion-salva-vidas-ante-un-sismo",
+    "edition": null
+  },
+  {
+    "id": "source_019",
+    "institution": "MINSA",
+    "title": "MINSA, atención de heridas",
+    "url": "https://www.gob.pe/16779",
+    "edition": null
+  },
+  {
+    "id": "source_020",
+    "institution": "CDC",
+    "title": "CDC, heridas tras un desastre",
+    "url": "https://www.cdc.gov/natural-disasters/communication-resources/emergency-wound-care-after-a-natural-disaster-factsheet.html",
+    "edition": null
+  },
+  {
+    "id": "source_021",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, heridas",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/wounds",
+    "edition": null
+  },
+  {
+    "id": "source_022",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, deshidratación",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/dehydration",
+    "edition": null
+  },
+  {
+    "id": "source_023",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, agotamiento por calor",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/heat-exhaustion",
+    "edition": null
+  },
+  {
+    "id": "source_024",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, hipotermia",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/hypothermia",
+    "edition": null
+  },
+  {
+    "id": "source_025",
+    "institution": "OMS",
+    "title": "OMS, salud tras un terremoto",
+    "url": "https://www.who.int/europe/news-room/questions-and-answers/item/public-health-advice-in-the-aftermath-of-an-earthquake",
+    "edition": null
+  },
+  {
+    "id": "source_026",
+    "institution": "MINSA",
+    "title": "MINSA, enfermedades tras un sismo",
+    "url": "https://www.gob.pe/39977-enfermedades-que-se-presentan-despues-de-un-sismo",
+    "edition": null
+  },
+  {
+    "id": "source_027",
+    "institution": "MINSA",
+    "title": "MINSA, diarrea y agua segura",
+    "url": "https://www.gob.pe/institucion/minsa/noticias/1360573-minsa-brinda-recomendaciones-para-prevenir-enfermedades-diarreicas-ante-lluvias-e-inundaciones",
+    "edition": null
+  },
+  {
+    "id": "source_028",
+    "institution": "CDC",
+    "title": "CDC, prevención de diarrea tras desastres",
+    "url": "https://www.cdc.gov/water-emergency/safety/index.html",
+    "edition": null
+  },
+  {
+    "id": "source_029",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, diarrea",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/diarrhea",
+    "edition": null
+  },
+  {
+    "id": "source_030",
+    "institution": "CDC",
+    "title": "CDC, diabetes y diálisis en emergencias",
+    "url": "https://www.cdc.gov/diabetes/articles/diabetes-care-emergencies.html",
+    "edition": null
+  },
+  {
+    "id": "source_031",
+    "institution": "Cruz Roja",
+    "title": "Cruz Roja, sangrado nasal",
+    "url": "https://www.redcross.org/take-a-class/resources/learn-first-aid/nosebleeds",
+    "edition": null
+  }
+]

@@ -31,7 +31,10 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
 /coverage/
+/local_models/*
+!/local_models/README.md
 
 # Symbolication related
 app.*.symbols
