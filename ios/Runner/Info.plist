@@ -4,6 +4,8 @@
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Lifeline graba tu descripción de la emergencia para procesarla en el dispositivo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Lifeline usa tu ubicación mientras completas la consulta para ayudar a localizar al paciente.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Lifeline permite fotografiar la situación del paciente.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

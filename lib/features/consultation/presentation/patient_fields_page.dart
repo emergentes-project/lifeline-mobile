@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../domain/models/consultation_draft.dart';
 import '../domain/models/patient_draft.dart';
+import '../data/device/device_location_service.dart';
 
 class PatientFieldsPage extends StatefulWidget {
   const PatientFieldsPage({super.key, required this.draft});
@@ -16,6 +17,38 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
   final age = TextEditingController();
   final province = TextEditingController();
   final location = TextEditingController();
+  final deviceLocation = DeviceLocationService();
+  DeviceLocation? coordinates;
+  String? locationError;
+  bool locating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => captureLocation());
+  }
+
+  Future<void> captureLocation() async {
+    if (locating) return;
+    setState(() {
+      locating = true;
+      locationError = null;
+    });
+    try {
+      final result = await deviceLocation.capture();
+      if (!mounted) return;
+      setState(() => coordinates = result);
+    } on DeviceLocationException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        coordinates = null;
+        locationError = error.message;
+      });
+    } finally {
+      if (mounted) setState(() => locating = false);
+    }
+  }
+
   @override
   void dispose() {
     name.dispose();
@@ -34,6 +67,8 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
       locationDescription: location.text.trim().isEmpty
           ? null
           : location.text.trim(),
+      latitude: coordinates?.latitude,
+      longitude: coordinates?.longitude,
     );
     Navigator.push(
       context,
@@ -97,13 +132,37 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Card(
+                  Card(
                     child: ListTile(
-                      leading: Icon(Icons.location_off_outlined),
-                      title: Text('Ubicación GPS pendiente'),
-                      subtitle: Text(
-                        'La captura de coordenadas se integrará en otra parte. Puedes escribir una referencia.',
+                      leading: Icon(
+                        coordinates == null
+                            ? Icons.location_searching
+                            : Icons.location_on_outlined,
                       ),
+                      title: Text(
+                        locating
+                            ? 'Obteniendo ubicación...'
+                            : coordinates == null
+                            ? 'Ubicación no disponible'
+                            : 'Ubicación registrada',
+                      ),
+                      subtitle: Text(
+                        coordinates == null
+                            ? (locationError ??
+                                  'Puedes continuar con una referencia escrita.')
+                            : '${coordinates!.latitude.toStringAsFixed(6)}, ${coordinates!.longitude.toStringAsFixed(6)} · precisión aproximada ${coordinates!.accuracyMeters.round()} m',
+                      ),
+                      trailing: locating
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.refresh),
+                              tooltip: 'Reintentar ubicación',
+                              onPressed: captureLocation,
+                            ),
                     ),
                   ),
                 ],
@@ -143,6 +202,14 @@ class ConsultationSummaryPage extends StatelessWidget {
         ),
         if (patient.locationDescription != null)
           Text(patient.locationDescription!),
+        if (patient.latitude != null && patient.longitude != null)
+          ListTile(
+            leading: const Icon(Icons.location_on_outlined),
+            title: const Text('Coordenadas GPS'),
+            subtitle: Text(
+              '${patient.latitude!.toStringAsFixed(6)}, ${patient.longitude!.toStringAsFixed(6)}',
+            ),
+          ),
         const SizedBox(height: 20),
         if (draft.description.trim().isNotEmpty) Text(draft.description),
         if (draft.audioPath != null)

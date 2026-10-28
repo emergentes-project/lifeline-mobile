@@ -4,9 +4,13 @@ class PatientDraft {
     required this.ageYears,
     this.province,
     this.locationDescription,
+    this.latitude,
+    this.longitude,
   });
   final String name;
   final int ageYears;
   final String? province;
   final String? locationDescription;
+  final double? latitude;
+  final double? longitude;
 }
