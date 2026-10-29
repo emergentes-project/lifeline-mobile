@@ -59,6 +59,44 @@ class CaseManagementService {
     return CaseLists(available: groups[0], mine: groups[1]);
   }
 
+  Future<CasePage<CaseListItem>> loadPage(
+    String token, {
+    required bool citizen,
+    required bool assignedToMe,
+    required CaseFilters filters,
+    required int page,
+    int size = 10,
+  }) async {
+    if (!citizen) await _requireApproved(token);
+    final result = await cases.listPage(
+      token,
+      citizen: citizen,
+      assignedToMe: assignedToMe,
+      filters: filters,
+      page: page,
+      size: size,
+    );
+    final items = await Future.wait(
+      result.items.map((item) async {
+        try {
+          return CaseListItem(
+            item,
+            await cases.consultation(token, item.consultationId),
+          );
+        } catch (_) {
+          return CaseListItem(item, null);
+        }
+      }),
+    );
+    return CasePage(
+      items: items,
+      page: result.page,
+      size: result.size,
+      totalElements: result.totalElements,
+      totalPages: result.totalPages,
+    );
+  }
+
   Future<CaseDetail> loadDetail(
     String token,
     String id, {

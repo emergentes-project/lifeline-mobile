@@ -111,6 +111,28 @@ class CaseLists {
   final List<CaseListItem> mine;
 }
 
+class CaseFilters {
+  const CaseFilters({this.status, this.priority, this.province});
+  final CaseStatus? status;
+  final String? priority;
+  final String? province;
+}
+
+class CasePage<T> {
+  const CasePage({
+    required this.items,
+    required this.page,
+    required this.size,
+    required this.totalElements,
+    required this.totalPages,
+  });
+  final List<T> items;
+  final int page;
+  final int size;
+  final int totalElements;
+  final int totalPages;
+}
+
 class CaseDetail {
   const CaseDetail({
     required this.caseRecord,

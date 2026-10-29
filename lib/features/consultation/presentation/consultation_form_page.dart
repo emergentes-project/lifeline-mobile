@@ -12,6 +12,8 @@ import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/profile_page.dart';
 import '../../cases/presentation/cases_page.dart';
 
+enum _HomeAction { history, cases, profile, exit }
+
 class ConsultationFormPage extends StatefulWidget {
   const ConsultationFormPage({super.key, required this.guest});
   final bool guest;
@@ -31,6 +33,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   bool busy = false;
   String? transcription;
   bool noVoiceDetected = false;
+  String? inputError;
   TriageAnswer responds = TriageAnswer.unknown;
   TriageAnswer breathesNormally = TriageAnswer.unknown;
   TriageAnswer heavyBleeding = TriageAnswer.unknown;
@@ -72,7 +75,10 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       if (picked == null) return;
       final path = await media.retainPhoto(picked.path);
       if (!mounted) return;
-      setState(() => photoPath = path);
+      setState(() {
+        photoPath = path;
+        inputError = null;
+      });
     } catch (_) {
       if (mounted) message('No se pudo adjuntar la foto. Revisa los permisos.');
     }
@@ -118,6 +124,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
           audioPath = null;
           transcription = null;
           noVoiceDetected = false;
+          inputError = null;
         });
       }
     } catch (_) {
@@ -187,13 +194,43 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       return;
     }
     if (!draft.hasInput) {
-      message('Describe la situación, graba audio o adjunta una foto.');
+      setState(
+        () => inputError =
+            'Describe la situación, graba audio o adjunta una foto.',
+      );
       return;
     }
+    setState(() => inputError = null);
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => PatientFieldsPage(draft: draft)),
     );
+  }
+
+  Future<void> openSection(_HomeAction action) async {
+    switch (action) {
+      case _HomeAction.history:
+        await Navigator.push<void>(
+          context,
+          MaterialPageRoute(builder: (_) => const ConsultationHistoryPage()),
+        );
+      case _HomeAction.cases:
+        await Navigator.push<void>(
+          context,
+          MaterialPageRoute(builder: (_) => const CasesPage(citizen: true)),
+        );
+      case _HomeAction.profile:
+        await Navigator.push<void>(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfilePage()),
+        );
+      case _HomeAction.exit:
+        if (widget.guest) {
+          context.read<AuthCubit>().leaveGuest();
+        } else {
+          await context.read<AuthCubit>().signOut();
+        }
+    }
   }
 
   @override
@@ -201,40 +238,42 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
     appBar: AppBar(
       title: const Text('Nueva consulta'),
       actions: [
-        if (!widget.guest)
-          IconButton(
-            tooltip: 'Mis casos',
-            icon: const Icon(Icons.medical_information_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CasesPage(citizen: true)),
+        PopupMenuButton<_HomeAction>(
+          tooltip: 'Abrir menú de secciones',
+          icon: const Icon(Icons.menu),
+          onSelected: openSection,
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: _HomeAction.history,
+              child: ListTile(
+                leading: Icon(Icons.history),
+                title: Text('Consultas guardadas'),
+              ),
             ),
-          ),
-        if (!widget.guest)
-          IconButton(
-            tooltip: 'Mi perfil',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            if (!widget.guest)
+              const PopupMenuItem(
+                value: _HomeAction.cases,
+                child: ListTile(
+                  leading: Icon(Icons.medical_information_outlined),
+                  title: Text('Mis casos'),
+                ),
+              ),
+            if (!widget.guest)
+              const PopupMenuItem(
+                value: _HomeAction.profile,
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Mi perfil'),
+                ),
+              ),
+            PopupMenuItem(
+              value: _HomeAction.exit,
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: Text(widget.guest ? 'Salir' : 'Cerrar sesión'),
+              ),
             ),
-          ),
-        IconButton(
-          tooltip: 'Consultas guardadas',
-          icon: const Icon(Icons.history),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ConsultationHistoryPage()),
-          ),
-        ),
-        TextButton(
-          onPressed: () => widget.guest
-              ? context.read<AuthCubit>().leaveGuest()
-              : context.read<AuthCubit>().signOut(),
-          child: Text(
-            widget.guest ? 'Salir' : 'Cerrar sesión',
-            style: const TextStyle(color: Colors.white),
-          ),
+          ],
         ),
       ],
     ),
@@ -252,12 +291,31 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: description,
+                  onChanged: (_) {
+                    if (inputError != null) setState(() => inputError = null);
+                  },
                   maxLines: 5,
                   maxLength: 2000,
                   decoration: const InputDecoration(
+                    labelText: 'Descripción de la situación',
                     hintText: 'Describe la situación del paciente...',
+                    helperText:
+                        'Puedes escribir o dictar. Revisa el texto antes de continuar.',
                   ),
                 ),
+                if (inputError != null)
+                  Semantics(
+                    liveRegion: true,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        inputError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ),
                 Row(
                   children: [
                     Expanded(
@@ -300,6 +358,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                         : () => transcribeAudio(audioPath!),
                     trailing: IconButton(
                       icon: const Icon(Icons.close),
+                      tooltip: 'Quitar audio grabado',
                       onPressed: busy || recording
                           ? null
                           : () => setState(() {

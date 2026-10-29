@@ -6,6 +6,9 @@ import '../data/local/local_consultation_repository.dart';
 import '../domain/models/consultation_guidance.dart';
 import '../domain/models/saved_consultation.dart';
 import 'patient_fields_page.dart';
+import '../../auth/presentation/blocs/auth_cubit.dart';
+import '../application/consultation_owner.dart';
+import '../../../core/presentation/app_message_view.dart';
 
 class ConsultationHistoryPage extends StatefulWidget {
   const ConsultationHistoryPage({super.key});
@@ -26,6 +29,7 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
 
   void refresh() {
     consultations = context.read<LocalConsultationRepository>().list(
+      ownerKey: consultationOwnerKey(context.read<AuthCubit>().state),
       knowledge: context.read<LocalMedicalKnowledgeRepository>(),
     );
   }
@@ -56,20 +60,27 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
       future: consultations,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(
+              semanticsLabel: 'Cargando consultas guardadas',
+            ),
+          );
         }
         if (snapshot.hasError) {
-          return Center(
-            child: FilledButton(
-              onPressed: () => setState(refresh),
-              child: const Text('No se pudo cargar. Reintentar'),
-            ),
+          return AppMessageView(
+            icon: Icons.error_outline,
+            title: 'No se pudo abrir el historial',
+            message: 'Las consultas siguen guardadas en este dispositivo.',
+            actionLabel: 'Reintentar',
+            onAction: () => setState(refresh),
           );
         }
         final items = snapshot.data ?? const <SavedConsultation>[];
         if (items.isEmpty) {
-          return const Center(
-            child: Text('Todavía no hay consultas guardadas.'),
+          return const AppMessageView(
+            icon: Icons.history,
+            title: 'Sin consultas guardadas',
+            message: 'Las consultas que guardes aparecerán aquí.',
           );
         }
         return RefreshIndicator(
@@ -84,6 +95,19 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: Icon(
+                    item.canRetry
+                        ? Icons.pending_actions_outlined
+                        : Icons.assignment_turned_in_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                    semanticLabel: item.canRetry
+                        ? 'Orientación pendiente o fallida'
+                        : 'Orientación disponible',
+                  ),
                   title: Text(item.patient.name),
                   subtitle: Text(
                     '${item.createdAt.toLocal().day}/${item.createdAt.toLocal().month}/${item.createdAt.toLocal().year} · '

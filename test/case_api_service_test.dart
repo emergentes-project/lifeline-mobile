@@ -116,4 +116,45 @@ void main() {
     expect(result.answer?.preliminaryPriority, 'HIGH');
     expect(result.answer?.sources.single.institution, 'MINSA');
   });
+
+  test('paged case request sends filters and reads totals', () async {
+    late http.Request captured;
+    final api = CaseApiService(
+      MockClient((request) async {
+        captured = request;
+        return http.Response(
+          jsonEncode({
+            'items': [],
+            'page': 2,
+            'size': 10,
+            'totalElements': 24,
+            'totalPages': 3,
+          }),
+          200,
+        );
+      }),
+    );
+    final result = await api.listPage(
+      'jwt',
+      citizen: false,
+      assignedToMe: true,
+      filters: const CaseFilters(
+        status: CaseStatus.inProgress,
+        priority: 'HIGH',
+        province: 'Lima',
+      ),
+      page: 2,
+      size: 10,
+    );
+    expect(captured.url.path, '/api/v1/cases/paged');
+    expect(captured.url.queryParameters, containsPair('status', 'IN_PROGRESS'));
+    expect(captured.url.queryParameters, containsPair('priority', 'HIGH'));
+    expect(captured.url.queryParameters, containsPair('province', 'Lima'));
+    expect(
+      captured.url.queryParameters,
+      containsPair('assignmentRelation', 'ASSIGNED_TO_ME'),
+    );
+    expect(result.totalPages, 3);
+    expect(result.totalElements, 24);
+  });
 }

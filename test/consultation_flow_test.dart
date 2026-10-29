@@ -12,6 +12,9 @@ import 'package:lifeline_mobile/features/consultation/domain/models/consultation
 import 'package:lifeline_mobile/features/consultation/domain/models/patient_draft.dart';
 import 'package:lifeline_mobile/features/consultation/domain/models/saved_consultation.dart';
 import 'package:lifeline_mobile/features/consultation/presentation/consultation_history_page.dart';
+import 'package:lifeline_mobile/features/auth/presentation/blocs/auth_cubit.dart';
+import 'package:lifeline_mobile/features/auth/domain/repositories/auth_repository.dart';
+import 'package:lifeline_mobile/features/auth/domain/models/authenticated_user.dart';
 import 'package:lifeline_mobile/features/medical_bases/data/index/local_medical_knowledge_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -38,8 +41,30 @@ class FakeHistoryRepository extends LocalConsultationRepository {
 
   @override
   Future<List<SavedConsultation>> list({
+    required String ownerKey,
     LocalMedicalKnowledgeRepository? knowledge,
   }) async => items;
+}
+
+class _GuestAuthRepository implements AuthRepository {
+  @override
+  Future<AuthenticatedUser> signIn(String email, String password) =>
+      throw UnimplementedError();
+  @override
+  Future<AuthenticatedUser> registerCitizen(Map<String, dynamic> data) =>
+      throw UnimplementedError();
+  @override
+  Future<AuthenticatedUser> registerMedicalProfessional(
+    Map<String, dynamic> data,
+  ) => throw UnimplementedError();
+  @override
+  Future<AuthenticatedUser?> restoreSession() async => null;
+  @override
+  Future<bool> unlock(String password) async => false;
+  @override
+  Future<void> updateSavedUser(AuthenticatedUser user) async {}
+  @override
+  Future<void> signOut() async {}
 }
 
 void main() {
@@ -268,6 +293,7 @@ void main() {
         helpRequested: true,
       ),
       patient,
+      ownerKey: 'user:alice',
     );
     await repository.saveGuidance(
       id,
@@ -278,6 +304,7 @@ void main() {
         priorityReason: 'Comprobación inicial grave',
         professionalHelpRecommended: true,
       ),
+      ownerKey: 'user:alice',
     );
     final db = await databaseFactoryFfi.openDatabase(
       '${directory.path}/consultations.db',
@@ -323,6 +350,13 @@ void main() {
         },
       ),
     );
+    await old.insert('consultations', {
+      'created_at': DateTime.utc(2026).toIso8601String(),
+      'description': 'Registro sin propietario',
+      'help_requested': 0,
+      'patient_json': jsonEncode({'name': 'Previo', 'age_years': 30}),
+      'guidance_status': 'pending',
+    });
     await old.close();
     final repository = LocalConsultationRepository(
       factory: databaseFactoryFfi,
@@ -332,6 +366,7 @@ void main() {
     final id = await repository.saveDraft(
       const ConsultationDraft(description: 'Corte', helpRequested: false),
       patient,
+      ownerKey: 'user:alice',
     );
     await repository.saveGuidance(
       id,
@@ -341,6 +376,7 @@ void main() {
         preliminaryPriority: PreliminaryPriority.medium,
         professionalHelpRecommended: true,
       ),
+      ownerKey: 'user:alice',
     );
     final upgraded = await databaseFactoryFfi.openDatabase(databasePath);
     final rows = await upgraded.query(
@@ -351,6 +387,8 @@ void main() {
     expect(rows.single['preliminary_priority'], 'MEDIUM');
     expect(rows.single['professional_help_recommended'], 1);
     expect(rows.single['triage_json'], isNotNull);
+    expect(await repository.list(ownerKey: 'user:alice'), hasLength(1));
+    expect(await repository.list(ownerKey: 'guest'), isEmpty);
     await upgraded.close();
   });
 
@@ -371,6 +409,7 @@ void main() {
           heavyBleeding: TriageAnswer.no,
         ),
         patient,
+        ownerKey: 'user:alice',
       );
       final secondId = await repository.saveDraft(
         const ConsultationDraft(
@@ -378,6 +417,7 @@ void main() {
           helpRequested: true,
         ),
         const PatientDraft(name: 'Luis', ageYears: 40),
+        ownerKey: 'user:alice',
       );
       final sources = knowledge.search('herida superficial').first.sources;
       await repository.saveGuidance(
@@ -392,8 +432,12 @@ void main() {
           preliminaryPriority: PreliminaryPriority.low,
           professionalHelpRecommended: false,
         ),
+        ownerKey: 'user:alice',
       );
-      final history = await repository.list(knowledge: knowledge);
+      final history = await repository.list(
+        ownerKey: 'user:alice',
+        knowledge: knowledge,
+      );
       expect(history.map((item) => item.id), [secondId, firstId]);
       expect(history.first.guidance, isNull);
       expect(history.first.canRetry, isTrue);
@@ -418,8 +462,13 @@ void main() {
         helpRequested: false,
       ),
       patient,
+      ownerKey: 'user:alice',
     );
-    final pending = await repository.get(id, knowledge: knowledge);
+    final pending = await repository.get(
+      id,
+      ownerKey: 'user:alice',
+      knowledge: knowledge,
+    );
     expect(pending?.canRetry, isTrue);
     await repository.saveGuidance(
       id,
@@ -427,8 +476,12 @@ void main() {
         status: GuidanceStatus.failed,
         message: 'Error del modelo',
       ),
+      ownerKey: 'user:alice',
     );
-    expect((await repository.get(id))?.guidance?.status, GuidanceStatus.failed);
+    expect(
+      (await repository.get(id, ownerKey: 'user:alice'))?.guidance?.status,
+      GuidanceStatus.failed,
+    );
     await repository.saveGuidance(
       id,
       const ConsultationGuidance(
@@ -436,8 +489,9 @@ void main() {
         message: 'Orientación recuperada',
         measures: ['Limpiar el corte'],
       ),
+      ownerKey: 'user:alice',
     );
-    final restored = await repository.get(id);
+    final restored = await repository.get(id, ownerKey: 'user:alice');
     expect(restored?.guidance?.message, 'Orientación recuperada');
     expect(restored?.canRetry, isFalse);
     final db = await databaseFactoryFfi.openDatabase(databasePath);
@@ -449,6 +503,49 @@ void main() {
     );
     await db.close();
   });
+
+  test(
+    'local consultations remain private to their account or guest',
+    () async {
+      final repository = LocalConsultationRepository(
+        factory: databaseFactoryFfi,
+        databasePath: '${directory.path}/owners.db',
+      );
+      addTearDown(repository.close);
+      final alice = await repository.saveDraft(
+        const ConsultationDraft(description: 'Alice', helpRequested: false),
+        patient,
+        ownerKey: 'user:alice',
+      );
+      final guest = await repository.saveDraft(
+        const ConsultationDraft(description: 'Invitado', helpRequested: false),
+        patient,
+        ownerKey: 'guest',
+      );
+      expect((await repository.list(ownerKey: 'user:alice')).map((e) => e.id), [
+        alice,
+      ]);
+      expect((await repository.list(ownerKey: 'guest')).map((e) => e.id), [
+        guest,
+      ]);
+      expect(await repository.get(alice, ownerKey: 'user:bob'), isNull);
+      await expectLater(
+        repository.saveGuidance(
+          alice,
+          const ConsultationGuidance(
+            status: GuidanceStatus.failed,
+            message: 'X',
+          ),
+          ownerKey: 'user:bob',
+        ),
+        throwsStateError,
+      );
+      expect(
+        (await repository.get(alice, ownerKey: 'user:alice'))?.guidance,
+        isNull,
+      );
+    },
+  );
 
   testWidgets('history opens saved answer and offers retry for pending item', (
     tester,
@@ -492,7 +589,10 @@ void main() {
             value: FakeInference('{"cards":[],"conditions":[]}'),
           ),
         ],
-        child: const MaterialApp(home: ConsultationHistoryPage()),
+        child: BlocProvider(
+          create: (_) => AuthCubit(_GuestAuthRepository())..continueAsGuest(),
+          child: const MaterialApp(home: ConsultationHistoryPage()),
+        ),
       ),
     );
     await tester.pumpAndSettle();

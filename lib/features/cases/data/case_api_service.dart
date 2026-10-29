@@ -19,6 +19,43 @@ class CaseApiService implements CaseRepository {
   CaseApiService(this.client);
   final http.Client client;
 
+  @override
+  Future<CasePage<ManagedCase>> listPage(
+    String token, {
+    required bool citizen,
+    required bool assignedToMe,
+    required CaseFilters filters,
+    required int page,
+    required int size,
+  }) async {
+    final body =
+        await _request(
+              'GET',
+              citizen ? 'cases/me/paged' : 'cases/paged',
+              token,
+              query: {
+                'page': '$page',
+                'size': '$size',
+                if (filters.status != null)
+                  'status': _statusWire(filters.status!),
+                if (filters.priority != null) 'priority': filters.priority!,
+                if (filters.province != null &&
+                    filters.province!.trim().isNotEmpty)
+                  'province': filters.province!.trim(),
+                if (!citizen && assignedToMe)
+                  'assignmentRelation': 'ASSIGNED_TO_ME',
+              },
+            )
+            as Map<String, dynamic>;
+    return CasePage(
+      items: _caseList(body['items']),
+      page: body['page'] as int,
+      size: body['size'] as int,
+      totalElements: body['totalElements'] as int,
+      totalPages: body['totalPages'] as int,
+    );
+  }
+
   Uri _url(String path, [Map<String, String>? query]) => Uri.parse(
     '${ApiConfig.baseUrl}/api/v1/$path',
   ).replace(queryParameters: query);

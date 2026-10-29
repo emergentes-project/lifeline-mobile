@@ -1,6 +1,14 @@
 import '../models/managed_case.dart';
 
 abstract class CaseRepository {
+  Future<CasePage<ManagedCase>> listPage(
+    String token, {
+    required bool citizen,
+    required bool assignedToMe,
+    required CaseFilters filters,
+    required int page,
+    required int size,
+  });
   Future<List<ManagedCase>> listAvailable(String token);
   Future<List<ManagedCase>> listAssignedToMe(String token);
   Future<List<ManagedCase>> listForCitizen(String token);

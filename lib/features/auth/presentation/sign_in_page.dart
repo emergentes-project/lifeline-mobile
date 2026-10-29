@@ -13,6 +13,15 @@ class _SignInPageState extends State<SignInPage> {
   final form = GlobalKey<FormState>();
   final email = TextEditingController();
   final password = TextEditingController();
+  bool showPassword = false;
+
+  void submit() {
+    if (context.read<AuthCubit>().state.status == AuthStatus.busy) return;
+    if (form.currentState!.validate()) {
+      context.read<AuthCubit>().signIn(email.text.trim(), password.text);
+    }
+  }
+
   @override
   void dispose() {
     email.dispose();
@@ -35,39 +44,63 @@ class _SignInPageState extends State<SignInPage> {
           ).showSnackBar(SnackBar(content: Text(state.error!)));
         }
       },
-      child: Form(
-        key: form,
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            TextFormField(
-              controller: email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Correo electrónico',
+      child: AutofillGroup(
+        child: Form(
+          key: form,
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              TextFormField(
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [
+                  AutofillHints.username,
+                  AutofillHints.email,
+                ],
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Correo electrónico',
+                ),
+                validator: (v) => v == null || !v.contains('@')
+                    ? 'Ingresa un correo válido'
+                    : null,
               ),
-              validator: (v) => v == null || !v.contains('@')
-                  ? 'Ingresa un correo válido'
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: password,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Contraseña'),
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Ingresa tu contraseña' : null,
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () {
-                if (form.currentState!.validate()) {
-                  context.read<AuthCubit>().signIn(email.text, password.text);
-                }
-              },
-              child: const Text('Iniciar sesión'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: password,
+                obscureText: !showPassword,
+                autofillHints: const [AutofillHints.password],
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => submit(),
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  suffixIcon: IconButton(
+                    tooltip: showPassword
+                        ? 'Ocultar contraseña'
+                        : 'Mostrar contraseña',
+                    onPressed: () =>
+                        setState(() => showPassword = !showPassword),
+                    icon: Icon(
+                      showPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
+                ),
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Ingresa tu contraseña' : null,
+              ),
+              const SizedBox(height: 24),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) => FilledButton(
+                  onPressed: state.status == AuthStatus.busy ? null : submit,
+                  child: Text(
+                    state.status == AuthStatus.busy
+                        ? 'Ingresando...'
+                        : 'Iniciar sesión',
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ),

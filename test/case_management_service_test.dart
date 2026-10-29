@@ -106,6 +106,22 @@ class _Cases implements CaseRepository {
   int transitions = 0;
 
   @override
+  Future<CasePage<ManagedCase>> listPage(
+    String token, {
+    required bool citizen,
+    required bool assignedToMe,
+    required CaseFilters filters,
+    required int page,
+    required int size,
+  }) async => CasePage(
+    items: [current],
+    page: page,
+    size: size,
+    totalElements: 1,
+    totalPages: 1,
+  );
+
+  @override
   Future<ManagedCase> get(String token, String id) async {
     reads++;
     return current;

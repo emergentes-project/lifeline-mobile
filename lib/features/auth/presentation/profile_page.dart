@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../data/remote/profile_api_service.dart';
 import 'blocs/auth_cubit.dart';
+import '../../../core/presentation/app_message_view.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -34,13 +35,19 @@ class _ProfilePageState extends State<ProfilePage> {
         account = values[0];
         roleProfile = values[1];
       });
-    } catch (exception) {
+    } on ProfileApiException catch (exception) {
       if (!mounted) return;
       setState(() {
         account = null;
         roleProfile = null;
-        error = '$exception';
+        error = exception.message;
       });
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error = 'No se pudo cargar el perfil. Inténtalo de nuevo.',
+        );
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -54,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget row(String label, Object? value) => ListTile(
     title: Text(label),
-    subtitle: Text(
+    subtitle: SelectableText(
       value == null || '$value'.trim().isEmpty ? 'No registrado' : '$value',
     ),
   );
@@ -72,25 +79,18 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Mi perfil')),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.wifi_off, size: 48),
-                    const SizedBox(height: 12),
-                    Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: load,
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                ),
+          ? const Center(
+              child: CircularProgressIndicator(
+                semanticsLabel: 'Cargando perfil',
               ),
+            )
+          : error != null
+          ? AppMessageView(
+              icon: Icons.wifi_off_outlined,
+              title: 'No se pudo cargar el perfil',
+              message: error!,
+              actionLabel: 'Reintentar',
+              onAction: load,
             )
           : RefreshIndicator(
               onRefresh: load,
@@ -273,8 +273,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         result['phone'] as String?,
       );
       if (mounted) notice('Datos de cuenta actualizados.');
-    } catch (exception) {
-      if (mounted) notice('No se guardó la cuenta: $exception');
+    } on ProfileApiException catch (exception) {
+      if (mounted) notice('No se guardó la cuenta: ${exception.message}');
+    } catch (_) {
+      if (mounted) notice('No se guardó la cuenta. Inténtalo de nuevo.');
     } finally {
       if (mounted) setState(() => savingAccount = false);
     }
@@ -325,8 +327,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             ? 'Datos profesionales actualizados. La identificación cambió; revisa el estado de verificación.'
             : 'Datos del perfil actualizados.',
       );
-    } catch (exception) {
-      if (mounted) notice('No se guardó el perfil: $exception');
+    } on ProfileApiException catch (exception) {
+      if (mounted) notice('No se guardó el perfil: ${exception.message}');
+    } catch (_) {
+      if (mounted) notice('No se guardó el perfil. Inténtalo de nuevo.');
     } finally {
       if (mounted) setState(() => savingRole = false);
     }
@@ -424,7 +428,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 ),
                 input('specialty', 'Especialidad', required: false),
                 const Text(
-                  'Si cambias la identificación profesional, el backend revisará nuevamente la verificación.',
+                  'Si cambias la identificación profesional, tu habilitación volverá a evaluarse.',
                 ),
               ],
               const SizedBox(height: 12),

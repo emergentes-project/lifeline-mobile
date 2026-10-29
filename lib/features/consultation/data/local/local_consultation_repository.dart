@@ -18,9 +18,14 @@ class LocalConsultationRepository {
   final String? _databasePath;
   Database? _database;
 
-  Future<int> saveDraft(ConsultationDraft draft, PatientDraft patient) async {
+  Future<int> saveDraft(
+    ConsultationDraft draft,
+    PatientDraft patient, {
+    required String ownerKey,
+  }) async {
     final db = await _open();
     return db.insert('consultations', {
+      'owner_key': ownerKey,
       'created_at': DateTime.now().toUtc().toIso8601String(),
       'description': draft.description.trim(),
       'help_requested': draft.helpRequested ? 1 : 0,
@@ -46,9 +51,13 @@ class LocalConsultationRepository {
     });
   }
 
-  Future<void> saveGuidance(int id, ConsultationGuidance guidance) async {
+  Future<void> saveGuidance(
+    int id,
+    ConsultationGuidance guidance, {
+    required String ownerKey,
+  }) async {
     final db = await _open();
-    await db.update(
+    final updated = await db.update(
       'consultations',
       {
         'guidance_status': guidance.status.name,
@@ -83,17 +92,23 @@ class LocalConsultationRepository {
           'professional_help_recommended': guidance.professionalHelpRecommended,
         }),
       },
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'id = ? AND owner_key = ?',
+      whereArgs: [id, ownerKey],
     );
+    if (updated == 0) {
+      throw StateError('Consulta no disponible para este usuario.');
+    }
   }
 
   Future<List<SavedConsultation>> list({
+    required String ownerKey,
     LocalMedicalKnowledgeRepository? knowledge,
   }) async {
     final db = await _open();
     final rows = await db.query(
       'consultations',
+      where: 'owner_key = ?',
+      whereArgs: [ownerKey],
       orderBy: 'created_at DESC, id DESC',
     );
     return rows.map((row) => _read(row, knowledge)).toList(growable: false);
@@ -101,13 +116,14 @@ class LocalConsultationRepository {
 
   Future<SavedConsultation?> get(
     int id, {
+    required String ownerKey,
     LocalMedicalKnowledgeRepository? knowledge,
   }) async {
     final db = await _open();
     final rows = await db.query(
       'consultations',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'id = ? AND owner_key = ?',
+      whereArgs: [id, ownerKey],
       limit: 1,
     );
     return rows.isEmpty ? null : _read(rows.single, knowledge);
@@ -205,11 +221,12 @@ class LocalConsultationRepository {
             'lifeline_consultations.db',
           ),
       options: OpenDatabaseOptions(
-        version: 3,
+        version: 4,
         onCreate: (db, _) async {
           await db.execute('''
             CREATE TABLE consultations (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              owner_key TEXT NOT NULL,
               created_at TEXT NOT NULL,
               description TEXT NOT NULL,
               help_requested INTEGER NOT NULL,
@@ -238,8 +255,16 @@ class LocalConsultationRepository {
               'ALTER TABLE consultations ADD COLUMN professional_help_recommended INTEGER',
             );
           }
+          if (oldVersion < 4) {
+            await db.execute(
+              "ALTER TABLE consultations ADD COLUMN owner_key TEXT NOT NULL DEFAULT 'legacy-unassigned'",
+            );
+          }
         },
       ),
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS consultations_owner_date_idx ON consultations(owner_key, created_at DESC, id DESC)',
     );
     _database = db;
     return db;

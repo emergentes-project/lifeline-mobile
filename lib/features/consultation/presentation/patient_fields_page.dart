@@ -10,6 +10,7 @@ import '../domain/models/patient_draft.dart';
 import '../data/device/device_location_service.dart';
 import '../../medical_bases/data/index/local_medical_knowledge_repository.dart';
 import '../../auth/presentation/blocs/auth_cubit.dart';
+import '../application/consultation_owner.dart';
 
 class PatientFieldsPage extends StatefulWidget {
   const PatientFieldsPage({super.key, required this.draft});
@@ -258,9 +259,11 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     });
     try {
       final consultations = context.read<LocalConsultationRepository>();
+      final ownerKey = consultationOwnerKey(context.read<AuthCubit>().state);
       consultationId ??= await consultations.saveDraft(
         widget.draft,
         widget.patient,
+        ownerKey: ownerKey,
       );
       if (!mounted) return;
       final service = ConsultationGuidanceService(
@@ -271,7 +274,11 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
         draft: widget.draft,
         patient: widget.patient,
       );
-      await consultations.saveGuidance(consultationId!, result);
+      await consultations.saveGuidance(
+        consultationId!,
+        result,
+        ownerKey: ownerKey,
+      );
       if (mounted) setState(() => guidance = result);
     } catch (_) {
       if (mounted) {

@@ -30,13 +30,13 @@ class LifelineApp extends StatelessWidget {
             return const LockedPage();
           case AuthStatus.authenticated:
             return _CurrentHome(
-              name: state.user!.fullName,
+              userId: state.user!.id,
               role: state.user!.role,
               guest: false,
             );
           case AuthStatus.guest:
             return const _CurrentHome(
-              name: 'Invitado',
+              userId: 'guest',
               role: 'CITIZEN',
               guest: true,
             );
@@ -48,17 +48,14 @@ class LifelineApp extends StatelessWidget {
 
 class _CurrentHome extends StatelessWidget {
   const _CurrentHome({
-    required this.name,
+    required this.userId,
     required this.role,
     required this.guest,
   });
-  final String name, role;
+  final String userId, role;
   final bool guest;
   @override
   Widget build(BuildContext context) => role == 'CITIZEN'
-      ? ConsultationFormPage(
-          key: ValueKey(guest ? 'guest' : name),
-          guest: guest,
-        )
+      ? ConsultationFormPage(key: ValueKey(userId), guest: guest)
       : const CasesPage(citizen: false);
 }

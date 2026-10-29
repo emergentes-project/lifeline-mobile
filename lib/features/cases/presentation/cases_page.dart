@@ -5,6 +5,9 @@ import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/profile_page.dart';
 import '../application/case_management_service.dart';
 import '../domain/models/managed_case.dart';
+import 'case_list_panel.dart';
+import '../../../core/presentation/app_message_view.dart';
+import '../data/case_api_service.dart';
 
 String caseStatusLabel(CaseStatus status) => switch (status) {
   CaseStatus.available => 'Disponible',
@@ -17,6 +20,15 @@ String caseDate(DateTime? date) => date == null
     ? 'Fecha no disponible'
     : '${date.toLocal().day}/${date.toLocal().month}/${date.toLocal().year}';
 
+String casePriorityLabel(String? priority) => switch (priority) {
+  'HIGH' => 'Alta',
+  'MEDIUM' => 'Media',
+  'LOW' => 'Baja',
+  _ => 'No disponible',
+};
+
+enum _CasesMenuAction { profile, signOut }
+
 class CasesPage extends StatefulWidget {
   const CasesPage({super.key, required this.citizen});
   final bool citizen;
@@ -26,136 +38,57 @@ class CasesPage extends StatefulWidget {
 }
 
 class _CasesPageState extends State<CasesPage> {
-  bool loading = true;
-  String? error;
-  String? verification;
-  List<CaseListItem> available = [];
-  List<CaseListItem> mine = [];
-
-  Future<void> load() async {
-    setState(() {
-      loading = true;
-      error = null;
-      verification = null;
-    });
-    final token = context.read<AuthCubit>().state.user!.token;
-    final service = context.read<CaseManagementService>();
-    try {
-      final lists = await service.loadLists(token, citizen: widget.citizen);
-      if (!mounted) return;
-      setState(() {
-        available = lists.available;
-        mine = lists.mine;
-      });
-    } on ProfessionalVerificationRequired catch (exception) {
-      if (mounted) setState(() => verification = exception.status);
-    } catch (exception) {
-      if (mounted) setState(() => error = '$exception');
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(load);
-  }
-
-  Widget list(List<CaseListItem> cases) => RefreshIndicator(
-    onRefresh: load,
-    child: cases.isEmpty
-        ? ListView(
-            children: [
-              const SizedBox(height: 120),
-              Center(
-                child: Text(
-                  widget.citizen
-                      ? 'Aún no tienes casos en el servidor.'
-                      : 'No hay casos en esta sección.',
-                ),
-              ),
-            ],
-          )
-        : ListView.builder(
-            itemCount: cases.length,
-            itemBuilder: (context, index) {
-              final entry = cases[index];
-              final item = entry.caseRecord;
-              final patient = entry.consultation?.patient;
-              final answer = entry.consultation?.answer;
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: ListTile(
-                  title: Text(
-                    patient?.name ?? 'Caso ${item.id.substring(0, 8)}',
-                  ),
-                  subtitle: Text(
-                    '${caseStatusLabel(item.status)} · ${caseDate(item.createdAt)}\n'
-                    'Prioridad: ${answer?.preliminaryPriority ?? 'No disponible'} · '
-                    '${patient?.province ?? patient?.locationDescription ?? 'Ubicación no disponible'}',
-                  ),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    await Navigator.push<void>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CaseDetailPage(
-                          caseId: item.id,
-                          citizen: widget.citizen,
-                        ),
-                      ),
-                    );
-                    if (mounted) await load();
-                  },
-                ),
-              );
-            },
-          ),
-  );
-
+  int revision = 0;
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(widget.citizen ? 'Mis casos' : 'Gestión de casos'),
       actions: [
-        if (!widget.citizen)
-          IconButton(
-            tooltip: 'Mi perfil',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () async {
-              await Navigator.push<void>(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              );
-              if (mounted) await load();
-            },
-          ),
         IconButton(
           tooltip: 'Actualizar',
           icon: const Icon(Icons.refresh),
-          onPressed: load,
+          onPressed: () => setState(() => revision++),
         ),
         if (!widget.citizen)
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthCubit>().signOut(),
+          PopupMenuButton<_CasesMenuAction>(
+            tooltip: 'Abrir menú de cuenta',
+            icon: const Icon(Icons.menu),
+            onSelected: (action) async {
+              if (action == _CasesMenuAction.profile) {
+                await Navigator.push<void>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+                if (mounted) setState(() => revision++);
+              } else {
+                await context.read<AuthCubit>().signOut();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _CasesMenuAction.profile,
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Mi perfil'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _CasesMenuAction.signOut,
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Cerrar sesión'),
+                ),
+              ),
+            ],
           ),
       ],
     ),
-    body: loading
-        ? const Center(child: CircularProgressIndicator())
-        : error != null
-        ? _centerMessage(error!, load)
-        : verification != null
-        ? _centerMessage(
-            'Tu perfil profesional requiere verificación para ver o gestionar casos. Estado: $verification.',
-            load,
+    body: widget.citizen
+        ? CaseListPanel(
+            key: ValueKey(revision),
+            citizen: true,
+            assignedToMe: false,
           )
-        : widget.citizen
-        ? list(mine)
         : DefaultTabController(
             length: 2,
             child: Column(
@@ -167,25 +100,24 @@ class _CasesPageState extends State<CasesPage> {
                   ],
                 ),
                 Expanded(
-                  child: TabBarView(children: [list(available), list(mine)]),
+                  child: TabBarView(
+                    children: [
+                      CaseListPanel(
+                        key: ValueKey('available-$revision'),
+                        citizen: false,
+                        assignedToMe: false,
+                      ),
+                      CaseListPanel(
+                        key: ValueKey('mine-$revision'),
+                        citizen: false,
+                        assignedToMe: true,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-  );
-
-  Widget _centerMessage(String text, VoidCallback retry) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(text, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: retry, child: const Text('Reintentar')),
-        ],
-      ),
-    ),
   );
 }
 
@@ -224,8 +156,16 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
       );
       if (!mounted) return;
       setState(() => detail = fresh);
-    } catch (exception) {
+    } on ProfessionalVerificationRequired catch (exception) {
       if (mounted) setState(() => error = '$exception');
+    } on CaseApiException catch (exception) {
+      if (mounted) setState(() => error = exception.message);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => error = 'No se pudo cargar el caso. Inténtalo de nuevo.',
+        );
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -251,9 +191,15 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
       if (mounted) setState(() => detail = updated);
     } catch (exception) {
       if (!mounted) return;
+      final message =
+          exception is CaseApiException ||
+              exception is CaseTransitionUnavailable ||
+              exception is ProfessionalVerificationRequired
+          ? '$exception'
+          : 'No se pudo completar la acción. Inténtalo de nuevo.';
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('$exception')));
+      ).showSnackBar(SnackBar(content: Text(message)));
       await load();
     } finally {
       if (mounted) setState(() => acting = false);
@@ -264,30 +210,31 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     var observationText = '';
     final observation = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar caso'),
-        content: TextField(
-          onChanged: (value) => observationText = value,
-          autofocus: true,
-          maxLines: 4,
-          decoration: const InputDecoration(
-            labelText: 'Observación de atención',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Cerrar caso'),
+          content: TextField(
+            onChanged: (value) => setDialogState(() => observationText = value),
+            autofocus: true,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Observación de atención',
+              helperText: 'Resume la atención brindada.',
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: observationText.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(context, observationText.trim()),
+              child: const Text('Cerrar caso'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (observationText.trim().isNotEmpty) {
-                Navigator.pop(context, observationText.trim());
-              }
-            },
-            child: const Text('Cerrar caso'),
-          ),
-        ],
       ),
     );
     if (observation != null && mounted) {
@@ -297,7 +244,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
 
   Widget row(String label, Object? value) => ListTile(
     title: Text(label),
-    subtitle: Text(
+    subtitle: SelectableText(
       value == null || '$value'.trim().isEmpty ? 'No disponible' : '$value',
     ),
   );
@@ -311,6 +258,14 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     final mine =
         current?.assignedProfessionalUserId ==
         context.read<AuthCubit>().state.user?.id;
+    final canAssign =
+        current?.canPerform(
+          CaseAction.assign,
+          context.read<AuthCubit>().state.user?.id ?? '',
+        ) ==
+        true;
+    final canStart = mine && current?.status == CaseStatus.assigned;
+    final canClose = mine && current?.status == CaseStatus.inProgress;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del caso'),
@@ -322,20 +277,63 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
           ),
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(error!, textAlign: TextAlign.center),
-                  FilledButton(
-                    onPressed: load,
-                    child: const Text('Reintentar'),
-                  ),
-                ],
+      bottomNavigationBar:
+          !widget.citizen &&
+              !loading &&
+              error == null &&
+              (canAssign || canStart || canClose)
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (canAssign)
+                      FilledButton(
+                        onPressed: acting ? null : () => act(CaseAction.assign),
+                        child: const Text('Asumir caso'),
+                      ),
+                    if (canStart) ...[
+                      FilledButton(
+                        onPressed: acting ? null : () => act(CaseAction.start),
+                        child: const Text('Iniciar atención'),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: acting
+                            ? null
+                            : () => act(CaseAction.release),
+                        child: const Text('Liberar caso'),
+                      ),
+                    ],
+                    if (canClose)
+                      FilledButton(
+                        onPressed: acting ? null : close,
+                        child: const Text('Cerrar caso'),
+                      ),
+                    if (acting)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(
+                          semanticsLabel: 'Actualizando caso',
+                        ),
+                      ),
+                  ],
+                ),
               ),
+            )
+          : null,
+      body: loading
+          ? const Center(
+              child: CircularProgressIndicator(semanticsLabel: 'Cargando caso'),
+            )
+          : error != null
+          ? AppMessageView(
+              icon: Icons.error_outline,
+              title: 'No se pudo abrir el caso',
+              message: error!,
+              actionLabel: 'Reintentar',
+              onAction: load,
             )
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -347,7 +345,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                       row('Creado', caseDate(current.createdAt)),
                       if (current.closedAt != null)
                         row('Cerrado', caseDate(current.closedAt)),
-                      row('Prioridad preliminar', answer?.preliminaryPriority),
+                      row(
+                        'Prioridad preliminar',
+                        casePriorityLabel(answer?.preliminaryPriority),
+                      ),
                     ],
                   ),
                 ),
@@ -415,38 +416,6 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                     ],
                   ),
                 ),
-                if (!widget.citizen &&
-                    !acting &&
-                    current.canPerform(
-                      CaseAction.assign,
-                      context.read<AuthCubit>().state.user!.id,
-                    ))
-                  FilledButton(
-                    onPressed: () => act(CaseAction.assign),
-                    child: const Text('Asumir caso'),
-                  ),
-                if (!widget.citizen &&
-                    !acting &&
-                    mine &&
-                    current.status == CaseStatus.assigned) ...[
-                  FilledButton(
-                    onPressed: () => act(CaseAction.start),
-                    child: const Text('Iniciar atención'),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => act(CaseAction.release),
-                    child: const Text('Liberar caso'),
-                  ),
-                ],
-                if (!widget.citizen &&
-                    !acting &&
-                    mine &&
-                    current.status == CaseStatus.inProgress)
-                  FilledButton(
-                    onPressed: close,
-                    child: const Text('Cerrar caso'),
-                  ),
-                if (acting) const Center(child: CircularProgressIndicator()),
               ],
             ),
     );

@@ -14,7 +14,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final form = GlobalKey<FormState>();
   final fields = <String, TextEditingController>{};
   String category = 'DOCTOR';
+  late bool medical;
+  bool showPassword = false;
   DateTime? birthDate;
+  @override
+  void initState() {
+    super.initState();
+    medical = widget.medical;
+  }
+
   TextEditingController field(String name) =>
       fields.putIfAbsent(name, TextEditingController.new);
   @override
@@ -35,9 +43,27 @@ class _RegistrationPageState extends State<RegistrationPage> {
     padding: const EdgeInsets.only(bottom: 12),
     child: TextFormField(
       controller: field(key),
-      obscureText: secret,
+      obscureText: secret && !showPassword,
       keyboardType: keyboard,
-      decoration: InputDecoration(labelText: label),
+      autofillHints: key == 'email'
+          ? const [AutofillHints.email]
+          : key == 'password'
+          ? const [AutofillHints.newPassword]
+          : null,
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: secret
+            ? IconButton(
+                tooltip: showPassword
+                    ? 'Ocultar contraseña'
+                    : 'Mostrar contraseña',
+                onPressed: () => setState(() => showPassword = !showPassword),
+                icon: Icon(
+                  showPassword ? Icons.visibility_off : Icons.visibility,
+                ),
+              )
+            : null,
+      ),
       validator: (value) {
         if (required && (value == null || value.trim().isEmpty)) {
           return 'Ingresa $label';
@@ -54,33 +80,58 @@ class _RegistrationPageState extends State<RegistrationPage> {
   );
 
   Future<void> submit() async {
+    if (context.read<AuthCubit>().state.status == AuthStatus.busy) return;
     if (!form.currentState!.validate()) return;
-    if (!widget.medical && birthDate == null) {
+    if (!medical && birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecciona tu fecha de nacimiento')),
       );
       return;
     }
-    if (!widget.medical &&
+    if (!medical &&
         field('emergencyContactName').text.trim().isEmpty !=
             field('emergencyContactPhone').text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completa el nombre y teléfono del contacto de emergencia.')),
+        const SnackBar(
+          content: Text(
+            'Completa el nombre y teléfono del contacto de emergencia.',
+          ),
+        ),
       );
       return;
     }
+    final allowed = <String>{
+      'firstName',
+      'lastName',
+      'email',
+      'phone',
+      'password',
+      if (medical) ...{
+        'professionalLicenseNumber',
+        'specialty',
+      } else ...{
+        'city',
+        'district',
+        'address',
+        'emergencyContactName',
+        'emergencyContactPhone',
+      },
+    };
     final data = <String, dynamic>{
       for (final entry in fields.entries)
-        entry.key: entry.value.text.trim().isEmpty ? null : entry.value.text.trim(),
+        if (allowed.contains(entry.key))
+          entry.key: entry.value.text.trim().isEmpty
+              ? null
+              : entry.value.text.trim(),
     };
     data['password'] = field('password').text;
-    if (widget.medical) {
+    if (medical) {
       data['professionalCategory'] = category;
     } else {
       data['dateOfBirth'] =
           '${birthDate!.year.toString().padLeft(4, '0')}-${birthDate!.month.toString().padLeft(2, '0')}-${birthDate!.day.toString().padLeft(2, '0')}';
     }
-    await context.read<AuthCubit>().register(data, medical: widget.medical);
+    await context.read<AuthCubit>().register(data, medical: medical);
   }
 
   @override
@@ -108,18 +159,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ButtonSegment(value: false, label: Text('Ciudadano')),
                 ButtonSegment(value: true, label: Text('Personal médico')),
               ],
-              selected: {widget.medical},
-              onSelectionChanged: (selection) {
-                if (selection.first != widget.medical) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          RegistrationPage(medical: selection.first),
-                    ),
-                  );
-                }
-              },
+              selected: {medical},
+              onSelectionChanged:
+                  context.watch<AuthCubit>().state.status == AuthStatus.busy
+                  ? null
+                  : (selection) => setState(() => medical = selection.first),
             ),
             const SizedBox(height: 20),
             input('firstName', 'Nombres'),
@@ -135,7 +179,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
               required: false,
               keyboard: TextInputType.phone,
             ),
-            if (widget.medical) ...[
+            if (medical) ...[
               DropdownButtonFormField<String>(
                 initialValue: category,
                 decoration: const InputDecoration(
@@ -201,12 +245,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
             ],
             input('password', 'Contraseña', secret: true),
             const SizedBox(height: 12),
-            FilledButton(
-              onPressed: submit,
-              child: Text(
-                widget.medical
-                    ? 'Registrarme como personal médico'
-                    : 'Crear cuenta',
+            BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, state) => FilledButton(
+                onPressed: state.status == AuthStatus.busy ? null : submit,
+                child: Text(
+                  state.status == AuthStatus.busy
+                      ? 'Creando cuenta...'
+                      : medical
+                      ? 'Registrarme como personal médico'
+                      : 'Crear cuenta',
+                ),
               ),
             ),
           ],
