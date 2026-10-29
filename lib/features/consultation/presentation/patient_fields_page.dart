@@ -319,7 +319,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
           ),
         if (widget.draft.photoPath != null)
           const Text(
-            'La foto se conserva con la consulta. No se usa para inferir un diagnóstico.',
+            'Gemma analizará señales visibles de la foto junto con tu descripción. No usará la imagen para inferir un diagnóstico, la respiración ni el estado de conciencia.',
           ),
         if (widget.draft.helpRequested)
           const ListTile(

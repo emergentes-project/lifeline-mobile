@@ -15,6 +15,7 @@ class FakeInference extends Gemma4OnDeviceInference {
   FakeInference(this.response);
   final String response;
   String? prompt;
+  String? receivedImagePath;
 
   @override
   Future<bool> get isInstalled async => true;
@@ -22,6 +23,7 @@ class FakeInference extends Gemma4OnDeviceInference {
   @override
   Future<String> generate(String value, {String? imagePath}) async {
     prompt = value;
+    receivedImagePath = imagePath;
     return response;
   }
 }
@@ -86,6 +88,7 @@ void main() {
                   'Hay sangrado abundante por nariz después de un golpe.',
               helpRequested: true,
               heavyBleeding: TriageAnswer.yes,
+              photoPath: '/private/photo.jpg',
             ),
             patient: patient,
           );
@@ -113,6 +116,7 @@ void main() {
       expect(guidance.preliminaryPriority, PreliminaryPriority.high);
       expect(model.prompt, isNot(contains('Ana')));
       expect(model.prompt, isNot(contains('Lima')));
+      expect(model.receivedImagePath, '/private/photo.jpg');
     },
   );
 
