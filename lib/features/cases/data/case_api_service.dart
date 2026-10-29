@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../../core/config/api_config.dart';
+import '../domain/models/managed_case.dart';
+import '../domain/repositories/case_repository.dart';
 
 class CaseApiException implements Exception {
   const CaseApiException(this.message, {this.conflict = false});
@@ -13,21 +15,7 @@ class CaseApiException implements Exception {
   String toString() => message;
 }
 
-class RemoteCase {
-  const RemoteCase(this.data);
-  final Map<String, dynamic> data;
-  String get id => data['id'] as String;
-  String get consultationId => data['consultationId'] as String;
-  String get status => data['status'] as String;
-  String? get assignee => data['assignedProfessionalUserId'] as String?;
-  String? get observation => data['observation'] as String?;
-  DateTime? get createdAt =>
-      DateTime.tryParse(data['createdAt'] as String? ?? '');
-  DateTime? get closedAt =>
-      DateTime.tryParse(data['closedAt'] as String? ?? '');
-}
-
-class CaseApiService {
+class CaseApiService implements CaseRepository {
   CaseApiService(this.client);
   final http.Client client;
 
@@ -35,77 +23,158 @@ class CaseApiService {
     '${ApiConfig.baseUrl}/api/v1/$path',
   ).replace(queryParameters: query);
 
-  Future<List<RemoteCase>> listAvailable(String token) async {
-    final result = await _request(
-      'GET',
-      'cases',
-      token,
-      query: {'status': 'AVAILABLE'},
-    );
-    return (result as List<dynamic>)
-        .map((value) => RemoteCase(value as Map<String, dynamic>))
-        .toList();
-  }
+  @override
+  Future<List<ManagedCase>> listAvailable(String token) async => _caseList(
+    await _request('GET', 'cases', token, query: {'status': 'AVAILABLE'}),
+  );
 
-  Future<List<RemoteCase>> listAssignedToMe(String token) async {
-    final result = await _request(
+  @override
+  Future<List<ManagedCase>> listAssignedToMe(String token) async => _caseList(
+    await _request(
       'GET',
       'cases',
       token,
       query: {'assignmentRelation': 'ASSIGNED_TO_ME'},
-    );
-    return (result as List<dynamic>)
-        .map((value) => RemoteCase(value as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<List<RemoteCase>> listForCitizen(String token) async {
-    final result = await _request('GET', 'cases/me', token);
-    return (result as List<dynamic>)
-        .map((value) => RemoteCase(value as Map<String, dynamic>))
-        .toList();
-  }
-
-  Future<RemoteCase> get(String token, String id) async => RemoteCase(
-    await _request('GET', 'cases/$id', token) as Map<String, dynamic>,
+    ),
   );
 
-  Future<Map<String, dynamic>> consultation(String token, String id) async =>
-      await _request('GET', 'consultation-submissions/$id', token)
-          as Map<String, dynamic>;
+  @override
+  Future<List<ManagedCase>> listForCitizen(String token) async =>
+      _caseList(await _request('GET', 'cases/me', token));
 
-  Future<List<Map<String, dynamic>>> history(String token, String id) async =>
+  @override
+  Future<ManagedCase> get(String token, String id) async =>
+      _case(await _request('GET', 'cases/$id', token) as Map<String, dynamic>);
+
+  @override
+  Future<CaseConsultation> consultation(String token, String id) async =>
+      _consultation(
+        await _request('GET', 'consultation-submissions/$id', token)
+            as Map<String, dynamic>,
+      );
+
+  @override
+  Future<List<CaseStatusChange>> history(String token, String id) async =>
       (await _request('GET', 'cases/$id/history', token) as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+          .map((value) => _history(value as Map<String, dynamic>))
+          .toList(growable: false);
 
-  Future<RemoteCase> assign(String token, String id) async => RemoteCase(
+  @override
+  Future<ManagedCase> assign(String token, String id) async => _case(
     await _request('POST', 'cases/$id/assign', token) as Map<String, dynamic>,
   );
 
-  Future<RemoteCase> changeStatus(
+  @override
+  Future<ManagedCase> changeStatus(
     String token,
     String id,
-    String status,
-  ) async => RemoteCase(
+    CaseStatus status,
+  ) async => _case(
     await _request(
           'PATCH',
           'cases/$id/status',
           token,
-          body: {'newStatus': status},
+          body: {'newStatus': _statusWire(status)},
         )
         as Map<String, dynamic>,
   );
 
-  Future<RemoteCase> close(String token, String id, String observation) async =>
-      RemoteCase(
-        await _request(
-              'POST',
-              'cases/$id/close',
-              token,
-              body: {'observation': observation},
-            )
-            as Map<String, dynamic>,
-      );
+  @override
+  Future<ManagedCase> close(
+    String token,
+    String id,
+    String observation,
+  ) async => _case(
+    await _request(
+          'POST',
+          'cases/$id/close',
+          token,
+          body: {'observation': observation},
+        )
+        as Map<String, dynamic>,
+  );
+
+  List<ManagedCase> _caseList(dynamic body) => (body as List<dynamic>)
+      .map((value) => _case(value as Map<String, dynamic>))
+      .toList(growable: false);
+
+  ManagedCase _case(Map<String, dynamic> json) => ManagedCase(
+    id: json['id'] as String,
+    consultationId: json['consultationId'] as String,
+    status: _status(json['status'] as String),
+    assignedProfessionalUserId: json['assignedProfessionalUserId'] as String?,
+    observation: json['observation'] as String?,
+    createdAt: _date(json['createdAt']),
+    closedAt: _date(json['closedAt']),
+  );
+
+  CaseConsultation _consultation(Map<String, dynamic> json) {
+    final patient = json['patient'] as Map<String, dynamic>?;
+    final answer = json['answer'] as Map<String, dynamic>?;
+    return CaseConsultation(
+      inputText: json['inputText'] as String?,
+      requesterPhone: json['requesterPhone'] as String?,
+      helpRequested: json['helpRequested'] == true,
+      hasPhoto: json['hasPhoto'] == true,
+      patient: patient == null
+          ? null
+          : CasePatient(
+              name: patient['name'] as String?,
+              ageYears: patient['ageYears'] as int?,
+              locationDescription: patient['locationDescription'] as String?,
+              province: patient['province'] as String?,
+              latitude: (patient['latitude'] as num?)?.toDouble(),
+              longitude: (patient['longitude'] as num?)?.toDouble(),
+            ),
+      answer: answer == null
+          ? null
+          : CaseAnswer(
+              guidanceStatus: answer['guidanceStatus'] as String?,
+              guidanceText: answer['guidanceText'] as String?,
+              preliminaryPriority: answer['preliminaryPriority'] as String?,
+              professionalHelpRecommended:
+                  answer['professionalHelpRecommended'] as bool?,
+              sources:
+                  (answer['sourceReferences'] as List<dynamic>? ?? const [])
+                      .whereType<Map<String, dynamic>>()
+                      .map(
+                        (source) => CaseSource(
+                          institution: source['institution'] as String?,
+                          title: source['title'] as String?,
+                          url: source['url'] as String?,
+                        ),
+                      )
+                      .toList(growable: false),
+            ),
+    );
+  }
+
+  CaseStatusChange _history(Map<String, dynamic> json) => CaseStatusChange(
+    toStatus: _status(json['toStatus'] as String),
+    actorType: json['actorType'] as String?,
+    occurredAt: _date(json['occurredAt']),
+  );
+
+  CaseStatus _status(String value) => switch (value) {
+    'AVAILABLE' => CaseStatus.available,
+    'ASSIGNED' => CaseStatus.assigned,
+    'IN_PROGRESS' => CaseStatus.inProgress,
+    'CLOSED' => CaseStatus.closed,
+    _ => throw FormatException('Estado de caso desconocido: $value'),
+  };
+
+  String _statusWire(CaseStatus status) => switch (status) {
+    CaseStatus.available => 'AVAILABLE',
+    CaseStatus.assigned => 'ASSIGNED',
+    CaseStatus.inProgress => 'IN_PROGRESS',
+    CaseStatus.closed => 'CLOSED',
+  };
+
+  DateTime? _date(Object? value) {
+    if (value is! String) return null;
+    final hasZone = RegExp(r'(Z|[+-]\d{2}:\d{2})$').hasMatch(value);
+    return DateTime.tryParse(hasZone ? value : '${value}Z');
+  }
 
   Future<dynamic> _request(
     String method,

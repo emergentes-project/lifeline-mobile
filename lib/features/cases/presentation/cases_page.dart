@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../auth/data/remote/profile_api_service.dart';
 import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/profile_page.dart';
-import '../data/case_api_service.dart';
+import '../application/case_management_service.dart';
+import '../domain/models/managed_case.dart';
 
-String caseStatusLabel(String status) => switch (status) {
-  'AVAILABLE' => 'Disponible',
-  'ASSIGNED' => 'Asignado',
-  'IN_PROGRESS' => 'En atención',
-  'CLOSED' => 'Cerrado',
-  _ => status,
+String caseStatusLabel(CaseStatus status) => switch (status) {
+  CaseStatus.available => 'Disponible',
+  CaseStatus.assigned => 'Asignado',
+  CaseStatus.inProgress => 'En atención',
+  CaseStatus.closed => 'Cerrado',
 };
 
 String caseDate(DateTime? date) => date == null
@@ -30,9 +29,8 @@ class _CasesPageState extends State<CasesPage> {
   bool loading = true;
   String? error;
   String? verification;
-  List<RemoteCase> available = [];
-  List<RemoteCase> mine = [];
-  final details = <String, Map<String, dynamic>>{};
+  List<CaseListItem> available = [];
+  List<CaseListItem> mine = [];
 
   Future<void> load() async {
     setState(() {
@@ -41,51 +39,16 @@ class _CasesPageState extends State<CasesPage> {
       verification = null;
     });
     final token = context.read<AuthCubit>().state.user!.token;
-    final api = context.read<CaseApiService>();
+    final service = context.read<CaseManagementService>();
     try {
-      if (!widget.citizen) {
-        final profile = await context.read<ProfileApiService>().roleProfile(
-          token,
-          citizen: false,
-        );
-        if (profile['verificationStatus'] != 'APPROVED') {
-          if (mounted) {
-            setState(
-              () => verification =
-                  profile['verificationStatus'] as String? ?? 'PENDING',
-            );
-          }
-          return;
-        }
-      }
-      final lists = widget.citizen
-          ? [await api.listForCitizen(token)]
-          : await Future.wait([
-              api.listAvailable(token),
-              api.listAssignedToMe(token),
-            ]);
-      if (!mounted) return;
-      final all = widget.citizen ? lists.first : [...lists[0], ...lists[1]];
-      final fetched = await Future.wait(
-        all.map((item) async {
-          try {
-            return MapEntry(
-              item.id,
-              await api.consultation(token, item.consultationId),
-            );
-          } catch (_) {
-            return MapEntry(item.id, <String, dynamic>{});
-          }
-        }),
-      );
+      final lists = await service.loadLists(token, citizen: widget.citizen);
       if (!mounted) return;
       setState(() {
-        available = widget.citizen ? [] : lists[0];
-        mine = widget.citizen ? lists[0] : lists[1];
-        details
-          ..clear()
-          ..addEntries(fetched);
+        available = lists.available;
+        mine = lists.mine;
       });
+    } on ProfessionalVerificationRequired catch (exception) {
+      if (mounted) setState(() => verification = exception.status);
     } catch (exception) {
       if (mounted) setState(() => error = '$exception');
     } finally {
@@ -99,7 +62,7 @@ class _CasesPageState extends State<CasesPage> {
     Future.microtask(load);
   }
 
-  Widget list(List<RemoteCase> cases) => RefreshIndicator(
+  Widget list(List<CaseListItem> cases) => RefreshIndicator(
     onRefresh: load,
     child: cases.isEmpty
         ? ListView(
@@ -117,23 +80,20 @@ class _CasesPageState extends State<CasesPage> {
         : ListView.builder(
             itemCount: cases.length,
             itemBuilder: (context, index) {
-              final item = cases[index];
-              final consultation = details[item.id] ?? {};
-              final patient =
-                  consultation['patient'] as Map<String, dynamic>? ?? {};
-              final answer =
-                  consultation['answer'] as Map<String, dynamic>? ?? {};
+              final entry = cases[index];
+              final item = entry.caseRecord;
+              final patient = entry.consultation?.patient;
+              final answer = entry.consultation?.answer;
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: ListTile(
                   title: Text(
-                    patient['name'] as String? ??
-                        'Caso ${item.id.substring(0, 8)}',
+                    patient?.name ?? 'Caso ${item.id.substring(0, 8)}',
                   ),
                   subtitle: Text(
                     '${caseStatusLabel(item.status)} · ${caseDate(item.createdAt)}\n'
-                    'Prioridad: ${answer['preliminaryPriority'] ?? 'No disponible'} · '
-                    '${patient['province'] ?? patient['locationDescription'] ?? 'Ubicación no disponible'}',
+                    'Prioridad: ${answer?.preliminaryPriority ?? 'No disponible'} · '
+                    '${patient?.province ?? patient?.locationDescription ?? 'Ubicación no disponible'}',
                   ),
                   isThreeLine: true,
                   trailing: const Icon(Icons.chevron_right),
@@ -246,12 +206,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
   bool loading = true;
   bool acting = false;
   String? error;
-  RemoteCase? item;
-  Map<String, dynamic>? consultation;
-  List<Map<String, dynamic>> history = [];
+  CaseDetail? detail;
 
   String get token => context.read<AuthCubit>().state.user!.token;
-  CaseApiService get api => context.read<CaseApiService>();
+  CaseManagementService get service => context.read<CaseManagementService>();
 
   Future<void> load() async {
     setState(() {
@@ -259,17 +217,13 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
       error = null;
     });
     try {
-      final fresh = await api.get(token, widget.caseId);
-      final values = await Future.wait([
-        api.consultation(token, fresh.consultationId),
-        api.history(token, widget.caseId),
-      ]);
+      final fresh = await service.loadDetail(
+        token,
+        widget.caseId,
+        citizen: widget.citizen,
+      );
       if (!mounted) return;
-      setState(() {
-        item = fresh;
-        consultation = values[0] as Map<String, dynamic>;
-        history = values[1] as List<Map<String, dynamic>>;
-      });
+      setState(() => detail = fresh);
     } catch (exception) {
       if (mounted) setState(() => error = '$exception');
     } finally {
@@ -283,12 +237,18 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     Future.microtask(load);
   }
 
-  Future<void> act(Future<RemoteCase> Function() operation) async {
+  Future<void> act(CaseAction action, {String? observation}) async {
     if (acting) return;
     setState(() => acting = true);
     try {
-      await operation();
-      if (mounted) await load();
+      final updated = await service.perform(
+        token,
+        context.read<AuthCubit>().state.user!.id,
+        widget.caseId,
+        action,
+        observation: observation,
+      );
+      if (mounted) setState(() => detail = updated);
     } catch (exception) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -331,7 +291,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
       ),
     );
     if (observation != null && mounted) {
-      await act(() => api.close(token, widget.caseId, observation));
+      await act(CaseAction.close, observation: observation);
     }
   }
 
@@ -344,11 +304,13 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final current = item;
-    final data = consultation ?? {};
-    final patient = data['patient'] as Map<String, dynamic>? ?? {};
-    final answer = data['answer'] as Map<String, dynamic>? ?? {};
-    final mine = current?.assignee == context.read<AuthCubit>().state.user?.id;
+    final current = detail?.caseRecord;
+    final data = detail?.consultation;
+    final patient = data?.patient;
+    final answer = data?.answer;
+    final mine =
+        current?.assignedProfessionalUserId ==
+        context.read<AuthCubit>().state.user?.id;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del caso'),
@@ -385,10 +347,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                       row('Creado', caseDate(current.createdAt)),
                       if (current.closedAt != null)
                         row('Cerrado', caseDate(current.closedAt)),
-                      row(
-                        'Prioridad preliminar',
-                        answer['preliminaryPriority'],
-                      ),
+                      row('Prioridad preliminar', answer?.preliminaryPriority),
                     ],
                   ),
                 ),
@@ -396,29 +355,26 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                   child: Column(
                     children: [
                       const ListTile(title: Text('Paciente y solicitud')),
-                      row('Nombre', patient['name']),
-                      row('Edad', patient['ageYears']),
-                      row('Ubicación', patient['locationDescription']),
-                      row('Provincia', patient['province']),
-                      if (patient['latitude'] != null &&
-                          patient['longitude'] != null)
+                      row('Nombre', patient?.name),
+                      row('Edad', patient?.ageYears),
+                      row('Ubicación', patient?.locationDescription),
+                      row('Provincia', patient?.province),
+                      if (patient?.latitude != null &&
+                          patient?.longitude != null)
                         row(
                           'Coordenadas',
-                          '${patient['latitude']}, ${patient['longitude']}',
+                          '${patient!.latitude}, ${patient.longitude}',
                         ),
-                      row('Descripción', data['inputText']),
+                      row('Descripción', data?.inputText),
                       row(
                         'Teléfono de quien solicita ayuda',
-                        data['requesterPhone'],
+                        data?.requesterPhone,
                       ),
                       row(
                         'Ayuda solicitada',
-                        data['helpRequested'] == true ? 'Sí' : 'No',
+                        data?.helpRequested == true ? 'Sí' : 'No',
                       ),
-                      row(
-                        'Foto adjunta',
-                        data['hasPhoto'] == true ? 'Sí' : 'No',
-                      ),
+                      row('Foto adjunta', data?.hasPhoto == true ? 'Sí' : 'No'),
                     ],
                   ),
                 ),
@@ -426,23 +382,19 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                   child: Column(
                     children: [
                       const ListTile(title: Text('Orientación registrada')),
-                      row('Estado', answer['guidanceStatus']),
-                      row('Respuesta', answer['guidanceText']),
+                      row('Estado', answer?.guidanceStatus),
+                      row('Respuesta', answer?.guidanceText),
                       row(
                         'Ayuda profesional recomendada',
-                        answer['professionalHelpRecommended'] == true
+                        answer?.professionalHelpRecommended == true
                             ? 'Sí'
                             : 'No',
                       ),
-                      if (answer['sourceReferences']
-                          case final List<dynamic> sources)
-                        for (final source in sources)
-                          row(
-                            'Fuente',
-                            source is Map
-                                ? '${source['institution'] ?? ''}: ${source['title'] ?? ''}\n${source['url'] ?? ''}'
-                                : '$source',
-                          ),
+                      for (final source in answer?.sources ?? <CaseSource>[])
+                        row(
+                          'Fuente',
+                          '${source.institution ?? ''}: ${source.title ?? ''}\n${source.url ?? ''}',
+                        ),
                     ],
                   ),
                 ),
@@ -454,40 +406,42 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                   child: Column(
                     children: [
                       const ListTile(title: Text('Historial de estados')),
-                      for (final entry in history)
+                      for (final entry
+                          in detail?.history ?? <CaseStatusChange>[])
                         row(
-                          caseStatusLabel(entry['toStatus'] as String? ?? ''),
-                          '${entry['actorType'] ?? ''} · ${entry['occurredAt'] ?? ''}',
+                          caseStatusLabel(entry.toStatus),
+                          '${entry.actorType ?? ''} · ${caseDate(entry.occurredAt)}',
                         ),
                     ],
                   ),
                 ),
-                if (!widget.citizen && !acting && current.status == 'AVAILABLE')
+                if (!widget.citizen &&
+                    !acting &&
+                    current.canPerform(
+                      CaseAction.assign,
+                      context.read<AuthCubit>().state.user!.id,
+                    ))
                   FilledButton(
-                    onPressed: () => act(() => api.assign(token, current.id)),
+                    onPressed: () => act(CaseAction.assign),
                     child: const Text('Asumir caso'),
                   ),
                 if (!widget.citizen &&
                     !acting &&
                     mine &&
-                    current.status == 'ASSIGNED') ...[
+                    current.status == CaseStatus.assigned) ...[
                   FilledButton(
-                    onPressed: () => act(
-                      () => api.changeStatus(token, current.id, 'IN_PROGRESS'),
-                    ),
+                    onPressed: () => act(CaseAction.start),
                     child: const Text('Iniciar atención'),
                   ),
                   OutlinedButton(
-                    onPressed: () => act(
-                      () => api.changeStatus(token, current.id, 'AVAILABLE'),
-                    ),
+                    onPressed: () => act(CaseAction.release),
                     child: const Text('Liberar caso'),
                   ),
                 ],
                 if (!widget.citizen &&
                     !acting &&
                     mine &&
-                    current.status == 'IN_PROGRESS')
+                    current.status == CaseStatus.inProgress)
                   FilledButton(
                     onPressed: close,
                     child: const Text('Cerrar caso'),

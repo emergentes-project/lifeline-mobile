@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:lifeline_mobile/features/cases/data/case_api_service.dart';
+import 'package:lifeline_mobile/features/cases/domain/models/managed_case.dart';
 
 void main() {
   test('case workflow uses server routes and bearer token', () async {
@@ -32,7 +33,7 @@ void main() {
     await api.listAssignedToMe('jwt');
     await api.listForCitizen('jwt');
     await api.assign('jwt', 'case-1');
-    await api.changeStatus('jwt', 'case-1', 'IN_PROGRESS');
+    await api.changeStatus('jwt', 'case-1', CaseStatus.inProgress);
     await api.close('jwt', 'case-1', 'Atendido');
     await api.history('jwt', 'case-1');
 
@@ -72,5 +73,47 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('consultation detail maps patient, orientation and sources', () async {
+    final api = CaseApiService(
+      MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'inputText': 'Herida en brazo',
+            'requesterPhone': '987654321',
+            'helpRequested': true,
+            'hasPhoto': false,
+            'patient': {
+              'name': 'Ana',
+              'ageYears': 34,
+              'province': 'Lima',
+              'latitude': -12.0,
+              'longitude': -77.0,
+            },
+            'answer': {
+              'guidanceStatus': 'COMPLETED',
+              'guidanceText': 'Cubrir la herida',
+              'preliminaryPriority': 'HIGH',
+              'professionalHelpRecommended': true,
+              'sourceReferences': [
+                {
+                  'institution': 'MINSA',
+                  'title': 'Guía',
+                  'url': 'https://example.org',
+                },
+              ],
+            },
+          }),
+          200,
+        ),
+      ),
+    );
+
+    final result = await api.consultation('jwt', 'consult-1');
+    expect(result.requesterPhone, '987654321');
+    expect(result.patient?.name, 'Ana');
+    expect(result.answer?.preliminaryPriority, 'HIGH');
+    expect(result.answer?.sources.single.institution, 'MINSA');
   });
 }
