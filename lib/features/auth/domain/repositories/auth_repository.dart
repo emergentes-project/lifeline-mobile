@@ -8,5 +8,6 @@ abstract class AuthRepository {
   );
   Future<AuthenticatedUser?> restoreSession();
   Future<bool> unlock(String password);
+  Future<void> updateSavedUser(AuthenticatedUser user);
   Future<void> signOut();
 }

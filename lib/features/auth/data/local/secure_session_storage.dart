@@ -54,6 +54,9 @@ class SecureSessionStorage {
     }
   }
 
+  Future<void> updateUser(AuthenticatedUser user) =>
+      storage.write(key: _session, value: jsonEncode(user.toJson()));
+
   Future<void> clear() async {
     await storage.delete(key: _session);
     await storage.delete(key: _salt);

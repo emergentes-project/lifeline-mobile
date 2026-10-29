@@ -11,6 +11,16 @@ class AuthenticatedUser {
   String get fullName => '$firstName $lastName';
   bool get isCitizen => role == 'CITIZEN';
 
+  AuthenticatedUser withName(String firstName, String lastName) =>
+      AuthenticatedUser(
+        id: id,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        role: role,
+        token: token,
+      );
+
   factory AuthenticatedUser.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>;
     return AuthenticatedUser(

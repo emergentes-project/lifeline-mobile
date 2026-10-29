@@ -33,6 +33,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AuthenticatedUser?> restoreSession() => sessions.read();
   @override
   Future<bool> unlock(String password) => sessions.verify(password);
+
+  @override
+  Future<void> updateSavedUser(AuthenticatedUser user) =>
+      sessions.updateUser(user);
   @override
   Future<void> signOut() async {
     final user = await sessions.read();

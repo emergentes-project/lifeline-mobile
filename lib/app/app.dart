@@ -5,6 +5,7 @@ import '../features/auth/presentation/blocs/auth_cubit.dart';
 import '../features/auth/presentation/blocs/auth_state.dart';
 import '../features/auth/presentation/entry_page.dart';
 import '../features/auth/presentation/locked_page.dart';
+import '../features/auth/presentation/profile_page.dart';
 import '../features/consultation/presentation/consultation_form_page.dart';
 
 class LifelineApp extends StatelessWidget {
@@ -60,7 +61,19 @@ class _CurrentHome extends StatelessWidget {
           guest: guest,
         )
       : Scaffold(
-          appBar: AppBar(title: const Text('Lifeline')),
+          appBar: AppBar(
+            title: const Text('Lifeline'),
+            actions: [
+              IconButton(
+                tooltip: 'Mi perfil',
+                icon: const Icon(Icons.person_outline),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                ),
+              ),
+            ],
+          ),
           body: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
