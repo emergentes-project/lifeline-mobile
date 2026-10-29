@@ -14,7 +14,7 @@ class SavedConsultation {
   final int id;
   final DateTime createdAt;
   final ConsultationDraft draft;
-  final PatientDraft patient;
+  final PatientDraft? patient;
   final ConsultationGuidance? guidance;
 
   bool get canRetry => guidance == null || !guidance!.isReady;

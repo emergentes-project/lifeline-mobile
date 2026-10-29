@@ -3,7 +3,7 @@ enum TriageAnswer { unknown, yes, no }
 class ConsultationDraft {
   const ConsultationDraft({
     required this.description,
-    required this.helpRequested,
+    this.helpRequested = false,
     this.photoPath,
     this.audioPath,
     this.responds = TriageAnswer.unknown,
@@ -20,4 +20,14 @@ class ConsultationDraft {
 
   bool get hasInput =>
       description.trim().isNotEmpty || photoPath != null || audioPath != null;
+
+  ConsultationDraft withHelpRequested(bool value) => ConsultationDraft(
+    description: description,
+    helpRequested: value,
+    photoPath: photoPath,
+    audioPath: audioPath,
+    responds: responds,
+    breathesNormally: breathesNormally,
+    heavyBleeding: heavyBleeding,
+  );
 }

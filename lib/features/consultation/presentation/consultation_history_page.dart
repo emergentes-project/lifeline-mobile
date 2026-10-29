@@ -108,7 +108,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                         ? 'Orientación pendiente o fallida'
                         : 'Orientación disponible',
                   ),
-                  title: Text(item.patient.name),
+                  title: Text(
+                    item.patient?.name ?? 'Consulta sin solicitud de ayuda',
+                  ),
                   subtitle: Text(
                     '${item.createdAt.toLocal().day}/${item.createdAt.toLocal().month}/${item.createdAt.toLocal().year} · '
                     '${statusLabel(item)} · ${priorityLabel(item.guidance?.preliminaryPriority)}\n'

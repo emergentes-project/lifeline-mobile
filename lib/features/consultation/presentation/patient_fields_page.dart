@@ -84,13 +84,7 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
           ? null
           : requesterPhone.text.trim(),
     );
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            ConsultationSummaryPage(draft: widget.draft, patient: patient),
-      ),
-    );
+    Navigator.pop(context, patient);
   }
 
   @override
@@ -208,7 +202,7 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
               padding: const EdgeInsets.all(20),
               child: FilledButton(
                 onPressed: preview,
-                child: const Text('Revisar consulta'),
+                child: const Text('Guardar consulta'),
               ),
             ),
           ],
@@ -222,13 +216,13 @@ class ConsultationSummaryPage extends StatefulWidget {
   const ConsultationSummaryPage({
     super.key,
     required this.draft,
-    required this.patient,
+    this.patient,
     this.savedId,
     this.initialGuidance,
     this.fromHistory = false,
   });
   final ConsultationDraft draft;
-  final PatientDraft patient;
+  final PatientDraft? patient;
   final int? savedId;
   final ConsultationGuidance? initialGuidance;
   final bool fromHistory;
@@ -240,7 +234,10 @@ class ConsultationSummaryPage extends StatefulWidget {
 
 class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   ConsultationGuidance? guidance;
+  PatientDraft? patient;
   int? consultationId;
+  bool saved = false;
+  late bool helpRequested;
   bool busy = false;
   String? saveError;
 
@@ -248,7 +245,15 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   void initState() {
     super.initState();
     consultationId = widget.savedId;
+    saved = consultationId != null;
     guidance = widget.initialGuidance;
+    patient = widget.patient;
+    helpRequested = widget.draft.helpRequested;
+    if (consultationId == null && guidance == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) generateGuidance();
+      });
+    }
   }
 
   Future<void> generateGuidance() async {
@@ -260,31 +265,77 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     try {
       final consultations = context.read<LocalConsultationRepository>();
       final ownerKey = consultationOwnerKey(context.read<AuthCubit>().state);
-      consultationId ??= await consultations.saveDraft(
-        widget.draft,
-        widget.patient,
-        ownerKey: ownerKey,
-      );
-      if (!mounted) return;
       final service = ConsultationGuidanceService(
         knowledge: context.read<LocalMedicalKnowledgeRepository>(),
         inference: context.read<Gemma4OnDeviceInference>(),
       );
       final result = await service.create(
         draft: widget.draft,
-        patient: widget.patient,
+        patient: patient,
       );
-      await consultations.saveGuidance(
-        consultationId!,
-        result,
-        ownerKey: ownerKey,
-      );
+      if (consultationId != null) {
+        await consultations.saveGuidance(
+          consultationId!,
+          result,
+          ownerKey: ownerKey,
+        );
+      }
       if (mounted) setState(() => guidance = result);
     } catch (_) {
       if (mounted) {
         setState(
           () => saveError =
-              'No se pudo guardar la consulta. Vuelve a intentarlo antes de salir.',
+              'No se pudo obtener o guardar la orientación. Inténtalo de nuevo.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> continueToPatient() async {
+    if (guidance?.isReady != true || busy || !helpRequested) return;
+    final selected = await Navigator.push<PatientDraft>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PatientFieldsPage(
+          draft: widget.draft.withHelpRequested(helpRequested),
+        ),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    setState(() => patient = selected);
+    await saveConsultation();
+  }
+
+  Future<void> saveConsultation() async {
+    if (busy ||
+        (helpRequested && patient == null) ||
+        guidance?.isReady != true) {
+      return;
+    }
+    setState(() {
+      busy = true;
+      saveError = null;
+    });
+    try {
+      final consultations = context.read<LocalConsultationRepository>();
+      final ownerKey = consultationOwnerKey(context.read<AuthCubit>().state);
+      consultationId ??= await consultations.saveDraft(
+        widget.draft.withHelpRequested(helpRequested),
+        patient,
+        ownerKey: ownerKey,
+      );
+      await consultations.saveGuidance(
+        consultationId!,
+        guidance!,
+        ownerKey: ownerKey,
+      );
+      if (mounted) setState(() => saved = true);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => saveError = 'No se pudo guardar la consulta. Reinténtalo.',
         );
       }
     } finally {
@@ -325,33 +376,38 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Revisar consulta')),
+    appBar: AppBar(
+      title: Text(saved ? 'Revisar consulta' : 'Orientación de la consulta'),
+    ),
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text(
-          widget.patient.name,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        Text(
-          '${widget.patient.ageYears} años${widget.patient.province == null ? '' : ' · ${widget.patient.province}'}',
-        ),
-        if (widget.patient.locationDescription != null)
-          Text(widget.patient.locationDescription!),
-        if (widget.patient.requesterPhone != null)
-          ListTile(
-            leading: const Icon(Icons.phone_outlined),
-            title: const Text('Teléfono de quien solicita ayuda'),
-            subtitle: Text(widget.patient.requesterPhone!),
+        if (patient case final currentPatient?) ...[
+          Text(
+            currentPatient.name,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-        if (widget.patient.latitude != null && widget.patient.longitude != null)
-          ListTile(
-            leading: const Icon(Icons.location_on_outlined),
-            title: const Text('Coordenadas GPS'),
-            subtitle: Text(
-              '${widget.patient.latitude!.toStringAsFixed(6)}, ${widget.patient.longitude!.toStringAsFixed(6)}',
+          Text(
+            '${currentPatient.ageYears} años${currentPatient.province == null ? '' : ' · ${currentPatient.province}'}',
+          ),
+          if (currentPatient.locationDescription != null)
+            Text(currentPatient.locationDescription!),
+          if (currentPatient.requesterPhone != null)
+            ListTile(
+              leading: const Icon(Icons.phone_outlined),
+              title: const Text('Teléfono de quien solicita ayuda'),
+              subtitle: Text(currentPatient.requesterPhone!),
             ),
-          ),
+          if (currentPatient.latitude != null &&
+              currentPatient.longitude != null)
+            ListTile(
+              leading: const Icon(Icons.location_on_outlined),
+              title: const Text('Coordenadas GPS'),
+              subtitle: Text(
+                '${currentPatient.latitude!.toStringAsFixed(6)}, ${currentPatient.longitude!.toStringAsFixed(6)}',
+              ),
+            ),
+        ],
         const SizedBox(height: 20),
         if (widget.draft.description.trim().isNotEmpty)
           Text(widget.draft.description),
@@ -379,7 +435,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
           const Text(
             'Gemma analizará señales visibles de la foto junto con tu descripción. No usará la imagen para inferir un diagnóstico, la respiración ni el estado de conciencia.',
           ),
-        if (widget.draft.helpRequested)
+        if (saved && helpRequested)
           const ListTile(
             leading: Icon(Icons.medical_services_outlined),
             title: Text('Deseas solicitar apoyo profesional'),
@@ -429,11 +485,32 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
               result.professionalHelp,
               lead: helpLabel(result.professionalHelpRecommended),
             ),
+          ],
+          if (result.isReady && !saved && patient == null) ...[
+            const SizedBox(height: 20),
+            Text(
+              '¿Deseas solicitar apoyo profesional?',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(helpLabel(result.professionalHelpRecommended)),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Solicitar apoyo profesional'),
+              subtitle: const Text(
+                'Decide después de leer la orientación. El envío a profesionales aún no está disponible.',
+              ),
+              value: helpRequested,
+              onChanged: busy
+                  ? null
+                  : (value) => setState(() => helpRequested = value),
+            ),
+          ],
+          if (result.isReady)
             section('Fuentes', [
               for (final source in result.sources)
                 '${source.institution}: ${source.title}\n${source.url}',
             ]),
-          ],
         ] else if (consultationId != null)
           const Text(
             'Orientación pendiente. Puedes reintentarla cuando el modelo esté listo.',
@@ -452,10 +529,27 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
             ),
           ),
         if (busy) const Center(child: CircularProgressIndicator()),
-        if (!widget.fromHistory)
+        if (!saved && guidance?.isReady == true)
+          FilledButton(
+            onPressed: busy
+                ? null
+                : helpRequested && patient == null
+                ? continueToPatient
+                : saveConsultation,
+            child: Text(
+              helpRequested && patient == null
+                  ? 'Continuar con datos del paciente'
+                  : patient == null
+                  ? 'Guardar consulta'
+                  : 'Reintentar guardado',
+            ),
+          ),
+        if (saved && !widget.fromHistory)
+          const Text('Consulta guardada en este dispositivo.'),
+        if (!widget.fromHistory && !saved)
           OutlinedButton(
             onPressed: busy ? null : () => Navigator.pop(context),
-            child: const Text('Editar datos'),
+            child: const Text('Editar descripción'),
           ),
       ],
     ),

@@ -20,7 +20,7 @@ class LocalConsultationRepository {
 
   Future<int> saveDraft(
     ConsultationDraft draft,
-    PatientDraft patient, {
+    PatientDraft? patient, {
     required String ownerKey,
   }) async {
     final db = await _open();
@@ -36,15 +36,19 @@ class LocalConsultationRepository {
         'breathes_normally': draft.breathesNormally.name,
         'heavy_bleeding': draft.heavyBleeding.name,
       }),
-      'patient_json': jsonEncode({
-        'name': patient.name,
-        'age_years': patient.ageYears,
-        'province': patient.province,
-        'location_description': patient.locationDescription,
-        'latitude': patient.latitude,
-        'longitude': patient.longitude,
-        'requester_phone': patient.requesterPhone,
-      }),
+      'patient_json': jsonEncode(
+        patient == null
+            ? null
+            : {
+                'name': patient.name,
+                'age_years': patient.ageYears,
+                'province': patient.province,
+                'location_description': patient.locationDescription,
+                'latitude': patient.latitude,
+                'longitude': patient.longitude,
+                'requester_phone': patient.requesterPhone,
+              },
+      ),
       'guidance_status': 'pending',
       'preliminary_priority': null,
       'professional_help_recommended': null,
@@ -134,7 +138,7 @@ class LocalConsultationRepository {
     LocalMedicalKnowledgeRepository? knowledge,
   ) {
     final patientJson =
-        jsonDecode(row['patient_json'] as String) as Map<String, dynamic>;
+        jsonDecode(row['patient_json'] as String) as Map<String, dynamic>?;
     final triageJson = row['triage_json'] == null
         ? <String, dynamic>{}
         : jsonDecode(row['triage_json'] as String) as Map<String, dynamic>;
@@ -180,15 +184,18 @@ class LocalConsultationRepository {
         breathesNormally: answer(triageJson['breathes_normally']),
         heavyBleeding: answer(triageJson['heavy_bleeding']),
       ),
-      patient: PatientDraft(
-        name: patientJson['name'] as String,
-        ageYears: patientJson['age_years'] as int,
-        province: patientJson['province'] as String?,
-        locationDescription: patientJson['location_description'] as String?,
-        latitude: (patientJson['latitude'] as num?)?.toDouble(),
-        longitude: (patientJson['longitude'] as num?)?.toDouble(),
-        requesterPhone: patientJson['requester_phone'] as String?,
-      ),
+      patient: patientJson == null
+          ? null
+          : PatientDraft(
+              name: patientJson['name'] as String,
+              ageYears: patientJson['age_years'] as int,
+              province: patientJson['province'] as String?,
+              locationDescription:
+                  patientJson['location_description'] as String?,
+              latitude: (patientJson['latitude'] as num?)?.toDouble(),
+              longitude: (patientJson['longitude'] as num?)?.toDouble(),
+              requesterPhone: patientJson['requester_phone'] as String?,
+            ),
       guidance: status == GuidanceStatus.ready || guidanceJson != null
           ? ConsultationGuidance(
               status: status,

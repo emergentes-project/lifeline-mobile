@@ -12,6 +12,8 @@ import 'package:lifeline_mobile/features/consultation/domain/models/consultation
 import 'package:lifeline_mobile/features/consultation/domain/models/patient_draft.dart';
 import 'package:lifeline_mobile/features/consultation/domain/models/saved_consultation.dart';
 import 'package:lifeline_mobile/features/consultation/presentation/consultation_history_page.dart';
+import 'package:lifeline_mobile/features/consultation/presentation/consultation_form_page.dart';
+import 'package:lifeline_mobile/features/consultation/presentation/patient_fields_page.dart';
 import 'package:lifeline_mobile/features/auth/presentation/blocs/auth_cubit.dart';
 import 'package:lifeline_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:lifeline_mobile/features/auth/domain/models/authenticated_user.dart';
@@ -609,4 +611,118 @@ void main() {
     expect(find.text('1. Lavar la herida'), findsOneWidget);
     expect(find.text('Reintentar orientación'), findsNothing);
   });
+
+  testWidgets('asks for help and patient data only after the guidance', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: ConsultationFormPage(guest: true)),
+    );
+    expect(find.text('Obtener orientación'), findsOneWidget);
+    expect(find.text('Solicitar apoyo profesional'), findsNothing);
+    expect(find.text('Nombre del paciente'), findsNothing);
+
+    final repository = LocalConsultationRepository(
+      factory: databaseFactoryFfi,
+      databasePath: '${directory.path}/after_guidance.db',
+    );
+    addTearDown(repository.close);
+    await tester.pumpWidget(
+      RepositoryProvider<LocalConsultationRepository>.value(
+        value: repository,
+        child: BlocProvider(
+          create: (_) => AuthCubit(_GuestAuthRepository())..continueAsGuest(),
+          child: const MaterialApp(
+            home: ConsultationSummaryPage(
+              draft: ConsultationDraft(
+                description: 'Tiene un corte superficial.',
+              ),
+              initialGuidance: ConsultationGuidance(
+                status: GuidanceStatus.ready,
+                message: 'Orientación lista',
+                professionalHelpRecommended: true,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.scrollUntilVisible(find.byType(SwitchListTile), 250);
+    expect(find.text('Solicitar apoyo profesional'), findsOneWidget);
+    expect(find.text('Nombre del paciente'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Guardar consulta'), 250);
+    expect(find.text('Guardar consulta'), findsOneWidget);
+  });
+
+  testWidgets('requests patient data only after choosing professional help', (
+    tester,
+  ) async {
+    final repository = LocalConsultationRepository(
+      factory: databaseFactoryFfi,
+      databasePath: '${directory.path}/help_requested.db',
+    );
+    addTearDown(repository.close);
+    await tester.pumpWidget(
+      RepositoryProvider<LocalConsultationRepository>.value(
+        value: repository,
+        child: BlocProvider(
+          create: (_) => AuthCubit(_GuestAuthRepository())..continueAsGuest(),
+          child: const MaterialApp(
+            home: ConsultationSummaryPage(
+              draft: ConsultationDraft(
+                description: 'Tiene un corte superficial.',
+              ),
+              initialGuidance: ConsultationGuidance(
+                status: GuidanceStatus.ready,
+                message: 'Orientación lista',
+                professionalHelpRecommended: true,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.scrollUntilVisible(find.byType(SwitchListTile), 250);
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+    expect(find.text('Continuar con datos del paciente'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Continuar con datos del paciente'),
+      250,
+    );
+    await tester.tap(find.text('Continuar con datos del paciente'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Nombre del paciente'), findsOneWidget);
+    expect(find.text('Edad (años)'), findsOneWidget);
+  });
+
+  test(
+    'saves a consultation without patient data when help is declined',
+    () async {
+      final repository = LocalConsultationRepository(
+        factory: databaseFactoryFfi,
+        databasePath: '${directory.path}/without_patient.db',
+      );
+      addTearDown(repository.close);
+      final id = await repository.saveDraft(
+        const ConsultationDraft(description: 'Tiene un corte superficial.'),
+        null,
+        ownerKey: 'guest',
+      );
+      await repository.saveGuidance(
+        id,
+        const ConsultationGuidance(
+          status: GuidanceStatus.ready,
+          message: 'Orientación lista',
+          professionalHelpRecommended: true,
+        ),
+        ownerKey: 'guest',
+      );
+      final saved = await repository.get(id, ownerKey: 'guest');
+      expect(saved?.patient, isNull);
+      expect(saved?.draft.helpRequested, isFalse);
+      expect(saved?.guidance?.professionalHelpRecommended, isTrue);
+    },
+  );
 }

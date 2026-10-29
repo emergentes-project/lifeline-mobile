@@ -29,7 +29,6 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   String? photoPath;
   String? audioPath;
   bool recording = false;
-  bool helpRequested = false;
   bool busy = false;
   String? transcription;
   bool noVoiceDetected = false;
@@ -179,10 +178,9 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
     }
   }
 
-  void continueToPatient() {
+  void continueToGuidance() {
     final draft = ConsultationDraft(
       description: description.text,
-      helpRequested: helpRequested,
       photoPath: photoPath,
       audioPath: audioPath,
       responds: responds,
@@ -203,7 +201,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
     setState(() => inputError = null);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => PatientFieldsPage(draft: draft)),
+      MaterialPageRoute(builder: (_) => ConsultationSummaryPage(draft: draft)),
     );
   }
 
@@ -410,18 +408,8 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                   (answer) => heavyBleeding = answer,
                 ),
                 const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Necesito apoyo profesional'),
-                  subtitle: const Text(
-                    'La consulta se guardará localmente. El envío a profesionales aún no está disponible.',
-                  ),
-                  value: helpRequested,
-                  onChanged: (value) => setState(() => helpRequested = value),
-                ),
-                const SizedBox(height: 8),
                 const Text(
-                  'La orientación y la prioridad preliminar se calcularán con las fichas locales.',
+                  'Primero verás la orientación y la recomendación de la IA. Después podrás decidir si pides apoyo profesional y registrar los datos del paciente.',
                 ),
               ],
             ),
@@ -429,8 +417,8 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
           Padding(
             padding: const EdgeInsets.all(20),
             child: FilledButton(
-              onPressed: continueToPatient,
-              child: const Text('Continuar con datos del paciente'),
+              onPressed: continueToGuidance,
+              child: const Text('Obtener orientación'),
             ),
           ),
         ],
