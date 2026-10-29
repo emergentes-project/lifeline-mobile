@@ -38,6 +38,7 @@ class LocalConsultationRepository {
         'location_description': patient.locationDescription,
         'latitude': patient.latitude,
         'longitude': patient.longitude,
+        'requester_phone': patient.requesterPhone,
       }),
       'guidance_status': 'pending',
       'preliminary_priority': null,
@@ -170,6 +171,7 @@ class LocalConsultationRepository {
         locationDescription: patientJson['location_description'] as String?,
         latitude: (patientJson['latitude'] as num?)?.toDouble(),
         longitude: (patientJson['longitude'] as num?)?.toDouble(),
+        requesterPhone: patientJson['requester_phone'] as String?,
       ),
       guidance: status == GuidanceStatus.ready || guidanceJson != null
           ? ConsultationGuidance(

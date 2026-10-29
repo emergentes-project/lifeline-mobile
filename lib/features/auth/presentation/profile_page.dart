@@ -267,9 +267,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         'phone': optional('phone'),
       });
       if (!mounted) return;
-      await context.read<AuthCubit>().updateProfileName(
+      await context.read<AuthCubit>().updateProfileAccount(
         result['firstName'] as String,
         result['lastName'] as String,
+        result['phone'] as String?,
       );
       if (mounted) notice('Datos de cuenta actualizados.');
     } catch (exception) {

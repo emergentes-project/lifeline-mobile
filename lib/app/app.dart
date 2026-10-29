@@ -5,7 +5,7 @@ import '../features/auth/presentation/blocs/auth_cubit.dart';
 import '../features/auth/presentation/blocs/auth_state.dart';
 import '../features/auth/presentation/entry_page.dart';
 import '../features/auth/presentation/locked_page.dart';
-import '../features/auth/presentation/profile_page.dart';
+import '../features/cases/presentation/cases_page.dart';
 import '../features/consultation/presentation/consultation_form_page.dart';
 
 class LifelineApp extends StatelessWidget {
@@ -60,50 +60,5 @@ class _CurrentHome extends StatelessWidget {
           key: ValueKey(guest ? 'guest' : name),
           guest: guest,
         )
-      : Scaffold(
-          appBar: AppBar(
-            title: const Text('Lifeline'),
-            actions: [
-              IconButton(
-                tooltip: 'Mi perfil',
-                icon: const Icon(Icons.person_outline),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
-                ),
-              ),
-            ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  guest ? 'Acceso de emergencia' : 'Hola, $name',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  guest
-                      ? 'Puedes consultar sin crear una cuenta. El formulario de consulta se conectará en la siguiente parte.'
-                      : role == 'CITIZEN'
-                      ? 'Tu sesión está disponible sin internet. La consulta se implementará en la siguiente parte.'
-                      : 'Tu sesión está disponible sin internet. Los casos necesitan conexión para actualizarse.',
-                ),
-                const Spacer(),
-                if (guest)
-                  TextButton(
-                    onPressed: () => context.read<AuthCubit>().leaveGuest(),
-                    child: const Text('Volver al inicio'),
-                  )
-                else
-                  TextButton(
-                    onPressed: () => context.read<AuthCubit>().signOut(),
-                    child: const Text('Cerrar sesión'),
-                  ),
-              ],
-            ),
-          ),
-        );
+      : const CasesPage(citizen: false);
 }

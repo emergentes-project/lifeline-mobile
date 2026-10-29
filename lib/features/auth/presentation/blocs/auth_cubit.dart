@@ -80,10 +80,14 @@ class AuthCubit extends Cubit<AuthState> {
   void continueAsGuest() => emit(const AuthState(status: AuthStatus.guest));
   void leaveGuest() => emit(const AuthState(status: AuthStatus.signedOut));
 
-  Future<void> updateProfileName(String firstName, String lastName) async {
+  Future<void> updateProfileAccount(
+    String firstName,
+    String lastName,
+    String? phone,
+  ) async {
     final current = state.user;
     if (current == null || state.status != AuthStatus.authenticated) return;
-    final updated = current.withName(firstName, lastName);
+    final updated = current.withAccount(firstName, lastName, phone);
     await repository.updateSavedUser(updated);
     emit(AuthState(status: AuthStatus.authenticated, user: updated));
   }

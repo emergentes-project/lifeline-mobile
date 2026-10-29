@@ -9,6 +9,7 @@ import '../domain/models/consultation_guidance.dart';
 import '../domain/models/patient_draft.dart';
 import '../data/device/device_location_service.dart';
 import '../../medical_bases/data/index/local_medical_knowledge_repository.dart';
+import '../../auth/presentation/blocs/auth_cubit.dart';
 
 class PatientFieldsPage extends StatefulWidget {
   const PatientFieldsPage({super.key, required this.draft});
@@ -23,6 +24,7 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
   final age = TextEditingController();
   final province = TextEditingController();
   final location = TextEditingController();
+  final requesterPhone = TextEditingController();
   final deviceLocation = DeviceLocationService();
   DeviceLocation? coordinates;
   String? locationError;
@@ -31,6 +33,7 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
   @override
   void initState() {
     super.initState();
+    requesterPhone.text = context.read<AuthCubit>().state.user?.phone ?? '';
     WidgetsBinding.instance.addPostFrameCallback((_) => captureLocation());
   }
 
@@ -61,6 +64,7 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
     age.dispose();
     province.dispose();
     location.dispose();
+    requesterPhone.dispose();
     super.dispose();
   }
 
@@ -75,6 +79,9 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
           : location.text.trim(),
       latitude: coordinates?.latitude,
       longitude: coordinates?.longitude,
+      requesterPhone: requesterPhone.text.trim().isEmpty
+          ? null
+          : requesterPhone.text.trim(),
     );
     Navigator.push(
       context,
@@ -120,6 +127,28 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
                       return number == null || number < 0 || number > 120
                           ? 'Ingresa una edad válida'
                           : null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: requesterPhone,
+                    keyboardType: TextInputType.phone,
+                    maxLength: 30,
+                    decoration: const InputDecoration(
+                      labelText: 'Teléfono de quien solicita ayuda',
+                      helperText:
+                          'El personal médico podrá verlo para contactarte.',
+                    ),
+                    validator: (value) {
+                      final phone = value?.trim() ?? '';
+                      if (widget.draft.helpRequested && phone.isEmpty) {
+                        return 'Ingresa un teléfono de contacto';
+                      }
+                      if (phone.isNotEmpty &&
+                          !RegExp(r'^\+?[0-9 ()-]{6,30}$').hasMatch(phone)) {
+                        return 'Ingresa un teléfono válido';
+                      }
+                      return null;
                     },
                   ),
                   const SizedBox(height: 12),
@@ -302,6 +331,12 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
         ),
         if (widget.patient.locationDescription != null)
           Text(widget.patient.locationDescription!),
+        if (widget.patient.requesterPhone != null)
+          ListTile(
+            leading: const Icon(Icons.phone_outlined),
+            title: const Text('Teléfono de quien solicita ayuda'),
+            subtitle: Text(widget.patient.requesterPhone!),
+          ),
         if (widget.patient.latitude != null && widget.patient.longitude != null)
           ListTile(
             leading: const Icon(Icons.location_on_outlined),

@@ -6,6 +6,7 @@ import 'app/app.dart';
 import 'features/auth/data/local/secure_session_storage.dart';
 import 'features/auth/data/remote/auth_api_service.dart';
 import 'features/auth/data/remote/profile_api_service.dart';
+import 'features/cases/data/case_api_service.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/presentation/blocs/auth_cubit.dart';
 import 'features/consultation/data/ai/gemma4_on_device_inference.dart';
@@ -38,6 +39,9 @@ Future<void> main() async {
         ),
         RepositoryProvider<ProfileApiService>.value(
           value: ProfileApiService(http.Client()),
+        ),
+        RepositoryProvider<CaseApiService>.value(
+          value: CaseApiService(http.Client()),
         ),
       ],
       child: BlocProvider(

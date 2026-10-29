@@ -6,6 +6,7 @@ class PatientDraft {
     this.locationDescription,
     this.latitude,
     this.longitude,
+    this.requesterPhone,
   });
   final String name;
   final int ageYears;
@@ -13,4 +14,5 @@ class PatientDraft {
   final String? locationDescription;
   final double? latitude;
   final double? longitude;
+  final String? requesterPhone;
 }

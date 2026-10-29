@@ -48,7 +48,12 @@ void main() {
 
   late Directory directory;
   late LocalMedicalKnowledgeRepository knowledge;
-  const patient = PatientDraft(name: 'Ana', ageYears: 32, province: 'Lima');
+  const patient = PatientDraft(
+    name: 'Ana',
+    ageYears: 32,
+    province: 'Lima',
+    requesterPhone: '999111222',
+  );
 
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('lifeline_flow_');
@@ -288,6 +293,10 @@ void main() {
     expect(rows.single['preliminary_priority'], 'HIGH');
     expect(rows.single['professional_help_recommended'], 1);
     expect(jsonDecode(rows.single['patient_json'] as String)['name'], 'Ana');
+    expect(
+      jsonDecode(rows.single['patient_json'] as String)['requester_phone'],
+      '999111222',
+    );
     await db.close();
   });
 

@@ -6,20 +6,26 @@ class AuthenticatedUser {
     required this.lastName,
     required this.role,
     required this.token,
+    this.phone,
   });
   final String id, email, firstName, lastName, role, token;
+  final String? phone;
   String get fullName => '$firstName $lastName';
   bool get isCitizen => role == 'CITIZEN';
 
-  AuthenticatedUser withName(String firstName, String lastName) =>
-      AuthenticatedUser(
-        id: id,
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-        role: role,
-        token: token,
-      );
+  AuthenticatedUser withAccount(
+    String firstName,
+    String lastName,
+    String? phone,
+  ) => AuthenticatedUser(
+    id: id,
+    email: email,
+    firstName: firstName,
+    lastName: lastName,
+    role: role,
+    token: token,
+    phone: phone,
+  );
 
   factory AuthenticatedUser.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>;
@@ -30,6 +36,7 @@ class AuthenticatedUser {
       lastName: user['lastName'] as String,
       role: user['role'] as String,
       token: json['token'] as String,
+      phone: user['phone'] as String?,
     );
   }
 
@@ -40,6 +47,7 @@ class AuthenticatedUser {
       'firstName': firstName,
       'lastName': lastName,
       'role': role,
+      'phone': phone,
     },
     'token': token,
   };

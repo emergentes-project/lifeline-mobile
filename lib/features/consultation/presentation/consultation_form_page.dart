@@ -10,6 +10,7 @@ import 'patient_fields_page.dart';
 import 'consultation_history_page.dart';
 import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/profile_page.dart';
+import '../../cases/presentation/cases_page.dart';
 
 class ConsultationFormPage extends StatefulWidget {
   const ConsultationFormPage({super.key, required this.guest});
@@ -200,6 +201,15 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
     appBar: AppBar(
       title: const Text('Nueva consulta'),
       actions: [
+        if (!widget.guest)
+          IconButton(
+            tooltip: 'Mis casos',
+            icon: const Icon(Icons.medical_information_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CasesPage(citizen: true)),
+            ),
+          ),
         if (!widget.guest)
           IconButton(
             tooltip: 'Mi perfil',
