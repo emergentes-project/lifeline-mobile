@@ -8,6 +8,7 @@ import 'features/auth/data/remote/auth_api_service.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/presentation/blocs/auth_cubit.dart';
 import 'features/consultation/data/ai/gemma4_on_device_inference.dart';
+import 'features/consultation/data/local/local_consultation_repository.dart';
 import 'features/medical_bases/data/index/local_medical_knowledge_repository.dart';
 
 Future<void> main() async {
@@ -30,6 +31,9 @@ Future<void> main() async {
         ),
         RepositoryProvider<Gemma4OnDeviceInference>.value(
           value: Gemma4OnDeviceInference(),
+        ),
+        RepositoryProvider<LocalConsultationRepository>.value(
+          value: LocalConsultationRepository(),
         ),
       ],
       child: BlocProvider(

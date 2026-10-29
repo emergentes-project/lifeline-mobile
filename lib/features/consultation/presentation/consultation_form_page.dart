@@ -28,6 +28,26 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   bool busy = false;
   String? transcription;
   bool noVoiceDetected = false;
+  TriageAnswer responds = TriageAnswer.unknown;
+  TriageAnswer breathesNormally = TriageAnswer.unknown;
+  TriageAnswer heavyBleeding = TriageAnswer.unknown;
+
+  Widget triageQuestion(
+    String label,
+    TriageAnswer value,
+    ValueChanged<TriageAnswer> onChanged,
+  ) => DropdownButtonFormField<TriageAnswer>(
+    initialValue: value,
+    decoration: InputDecoration(labelText: label),
+    items: const [
+      DropdownMenuItem(value: TriageAnswer.unknown, child: Text('No sé')),
+      DropdownMenuItem(value: TriageAnswer.yes, child: Text('Sí')),
+      DropdownMenuItem(value: TriageAnswer.no, child: Text('No')),
+    ],
+    onChanged: (answer) {
+      if (answer != null) setState(() => onChanged(answer));
+    },
+  );
 
   @override
   void dispose() {
@@ -155,6 +175,9 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       helpRequested: helpRequested,
       photoPath: photoPath,
       audioPath: audioPath,
+      responds: responds,
+      breathesNormally: breathesNormally,
+      heavyBleeding: heavyBleeding,
     );
     if (recording || busy) {
       message('Espera a que termine la grabación y transcripción.');
@@ -275,19 +298,42 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                       ],
                     ),
                   ),
+                const SizedBox(height: 16),
+                Text(
+                  'Comprobaciones iniciales',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                triageQuestion(
+                  '¿La persona responde al hablarle?',
+                  responds,
+                  (answer) => responds = answer,
+                ),
+                const SizedBox(height: 8),
+                triageQuestion(
+                  '¿Respira normalmente?',
+                  breathesNormally,
+                  (answer) => breathesNormally = answer,
+                ),
+                const SizedBox(height: 8),
+                triageQuestion(
+                  '¿Hay sangrado intenso?',
+                  heavyBleeding,
+                  (answer) => heavyBleeding = answer,
+                ),
                 const SizedBox(height: 12),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Necesito apoyo profesional'),
                   subtitle: const Text(
-                    'La solicitud se enviará cuando haya conexión.',
+                    'La consulta se guardará localmente. El envío a profesionales aún no está disponible.',
                   ),
                   value: helpRequested,
                   onChanged: (value) => setState(() => helpRequested = value),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'La orientación médica con IA estará disponible al integrar la base de conocimientos.',
+                  'La orientación y la prioridad preliminar se calcularán con las fichas locales.',
                 ),
               ],
             ),

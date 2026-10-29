@@ -35,6 +35,7 @@ migrate_working_dir/
 /coverage/
 /local_models/*
 !/local_models/README.md
+/android/app/src/main/assets/gemma-4-E2B-it.litertlm
 
 # Symbolication related
 app.*.symbols

@@ -1,8 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../data/ai/consultation_guidance_service.dart';
+import '../data/ai/gemma4_on_device_inference.dart';
+import '../data/local/local_consultation_repository.dart';
 import '../domain/models/consultation_draft.dart';
+import '../domain/models/consultation_guidance.dart';
 import '../domain/models/patient_draft.dart';
 import '../data/device/device_location_service.dart';
+import '../../medical_bases/data/index/local_medical_knowledge_repository.dart';
 
 class PatientFieldsPage extends StatefulWidget {
   const PatientFieldsPage({super.key, required this.draft});
@@ -182,7 +188,7 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
   );
 }
 
-class ConsultationSummaryPage extends StatelessWidget {
+class ConsultationSummaryPage extends StatefulWidget {
   const ConsultationSummaryPage({
     super.key,
     required this.draft,
@@ -190,55 +196,202 @@ class ConsultationSummaryPage extends StatelessWidget {
   });
   final ConsultationDraft draft;
   final PatientDraft patient;
+
+  @override
+  State<ConsultationSummaryPage> createState() =>
+      _ConsultationSummaryPageState();
+}
+
+class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
+  ConsultationGuidance? guidance;
+  int? consultationId;
+  bool busy = false;
+  String? saveError;
+
+  Future<void> generateGuidance() async {
+    if (busy) return;
+    setState(() {
+      busy = true;
+      saveError = null;
+    });
+    try {
+      final consultations = context.read<LocalConsultationRepository>();
+      consultationId ??= await consultations.saveDraft(
+        widget.draft,
+        widget.patient,
+      );
+      if (!mounted) return;
+      final service = ConsultationGuidanceService(
+        knowledge: context.read<LocalMedicalKnowledgeRepository>(),
+        inference: context.read<Gemma4OnDeviceInference>(),
+      );
+      final result = await service.create(
+        draft: widget.draft,
+        patient: widget.patient,
+      );
+      await consultations.saveGuidance(consultationId!, result);
+      if (mounted) setState(() => guidance = result);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => saveError =
+              'No se pudo guardar la consulta. Vuelve a intentarlo antes de salir.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Widget section(String title, List<String> items, {String? lead}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 20),
+      Text(title, style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 8),
+      if (lead != null)
+        Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(lead)),
+      for (var index = 0; index < items.length; index++)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SelectableText('${index + 1}. ${items[index]}'),
+        ),
+    ],
+  );
+
+  String priorityLabel(PreliminaryPriority? priority) => switch (priority) {
+    PreliminaryPriority.high => 'Alta: atención inmediata',
+    PreliminaryPriority.medium => 'Media: valoración pronta',
+    PreliminaryPriority.low => 'Baja: puede esperar',
+    null => 'Pendiente por información insuficiente',
+  };
+
+  String helpLabel(bool? recommended) => switch (recommended) {
+    true => 'Sí, solicita ayuda profesional.',
+    false =>
+      'No parece necesaria de inmediato con los datos actuales. Vigila las condiciones indicadas abajo.',
+    null =>
+      'No se puede determinar con los datos disponibles. Busca valoración profesional si hay dudas o empeora.',
+  };
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Revisar consulta')),
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text(patient.name, style: Theme.of(context).textTheme.titleLarge),
         Text(
-          '${patient.ageYears} años${patient.province == null ? '' : ' · ${patient.province}'}',
+          widget.patient.name,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
-        if (patient.locationDescription != null)
-          Text(patient.locationDescription!),
-        if (patient.latitude != null && patient.longitude != null)
+        Text(
+          '${widget.patient.ageYears} años${widget.patient.province == null ? '' : ' · ${widget.patient.province}'}',
+        ),
+        if (widget.patient.locationDescription != null)
+          Text(widget.patient.locationDescription!),
+        if (widget.patient.latitude != null && widget.patient.longitude != null)
           ListTile(
             leading: const Icon(Icons.location_on_outlined),
             title: const Text('Coordenadas GPS'),
             subtitle: Text(
-              '${patient.latitude!.toStringAsFixed(6)}, ${patient.longitude!.toStringAsFixed(6)}',
+              '${widget.patient.latitude!.toStringAsFixed(6)}, ${widget.patient.longitude!.toStringAsFixed(6)}',
             ),
           ),
         const SizedBox(height: 20),
-        if (draft.description.trim().isNotEmpty) Text(draft.description),
-        if (draft.audioPath != null)
+        if (widget.draft.description.trim().isNotEmpty)
+          Text(widget.draft.description),
+        if (widget.draft.audioPath != null)
           const ListTile(
             leading: Icon(Icons.mic),
             title: Text('Audio adjunto'),
-            subtitle: Text('Transcripción pendiente'),
+            subtitle: Text(
+              'La descripción transcrita puede revisarse antes de continuar.',
+            ),
           ),
-        if (draft.photoPath != null)
+        if (widget.draft.photoPath != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Image.file(
-              File(draft.photoPath!),
+              File(widget.draft.photoPath!),
               height: 220,
               fit: BoxFit.cover,
             ),
           ),
-        if (draft.helpRequested)
+        if (widget.draft.photoPath != null)
+          const Text(
+            'La foto se conserva con la consulta. No se usa para inferir un diagnóstico.',
+          ),
+        if (widget.draft.helpRequested)
           const ListTile(
             leading: Icon(Icons.medical_services_outlined),
-            title: Text('Solicitar apoyo profesional'),
+            title: Text('Deseas solicitar apoyo profesional'),
+            subtitle: Text(
+              'La solicitud aún no se ha enviado a un profesional.',
+            ),
           ),
         const SizedBox(height: 16),
-        const Text(
-          'La consulta todavía no se ha guardado ni enviado. En la siguiente etapa integraremos el almacenamiento local y la orientación médica.',
+        const Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Antes de seguir: ¿el lugar es seguro?, ¿la persona responde?, ¿respira normalmente?, ¿hay sangrado intenso? Si falta una respuesta, vuelve y añádela a la descripción para elegir la indicación adecuada. Si la persona no puede responder o hay una señal grave, busca ayuda profesional inmediatamente. El envío a profesionales aún no está disponible en esta versión de la app.',
+            ),
+          ),
         ),
+        if (guidance?.urgent == true)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Busca apoyo profesional inmediatamente. El envío desde la app aún no está disponible.',
+              ),
+            ),
+          ),
+        if (guidance case final result?) ...[
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.priority_high),
+              title: const Text('Prioridad preliminar'),
+              subtitle: Text(
+                '${priorityLabel(result.preliminaryPriority)}\n'
+                '${result.priorityReason ?? 'Completa los datos o solicita valoración profesional.'}',
+              ),
+            ),
+          ),
+          Text(result.message),
+          if (result.isReady) ...[
+            section('1. Medidas a tomar', result.measures),
+            section(
+              '2. Indicaciones médicas a ejecutar',
+              result.medicalIndications,
+            ),
+            section(
+              '3. ¿Es necesario pedir ayuda profesional?',
+              result.professionalHelp,
+              lead: helpLabel(result.professionalHelpRecommended),
+            ),
+            section('Fuentes', [
+              for (final source in result.sources)
+                '${source.institution}: ${source.title}\n${source.url}',
+            ]),
+          ],
+        ],
+        if (saveError != null) Text(saveError!),
         const SizedBox(height: 16),
+        FilledButton(
+          onPressed: busy ? null : generateGuidance,
+          child: Text(
+            busy
+                ? 'Preparando orientación local...'
+                : guidance == null
+                ? 'Guardar y obtener orientación'
+                : 'Volver a generar orientación',
+          ),
+        ),
+        if (busy) const Center(child: CircularProgressIndicator()),
         OutlinedButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: busy ? null : () => Navigator.pop(context),
           child: const Text('Editar datos'),
         ),
       ],

@@ -11,6 +11,9 @@ android {
     namespace = "com.example.lifeline_mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    androidResources {
+        noCompress += "litertlm"
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -49,4 +52,17 @@ flutter {
 
 dependencies {
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
+}
+
+tasks.register("verifyBundledGemma") {
+    doLast {
+        val model = file("src/main/assets/gemma-4-E2B-it.litertlm")
+        check(model.isFile && model.length() == 2588147712L) {
+            "Falta el modelo Gemma completo. Ejecuta tool/prepare_bundled_model.ps1 antes de compilar."
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn("verifyBundledGemma")
 }
