@@ -101,6 +101,12 @@ class LocalMedicalKnowledgeRepository {
   String? get activeVersion => _active?.version;
   String? get commonSafetyRule => _active?.commonSafetyRule;
 
+  List<MedicalSource> sourcesForIds(Iterable<String> ids) {
+    final sources = _active?.sources;
+    if (sources == null) return const [];
+    return [for (final id in ids) ?sources[id]];
+  }
+
   Future<void> load() async {
     final files = await Future.wait([
       _bundle.loadString('$packagePath/manifest.json'),

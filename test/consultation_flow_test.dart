@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lifeline_mobile/features/consultation/data/ai/consultation_guidance_service.dart';
 import 'package:lifeline_mobile/features/consultation/data/ai/gemma4_on_device_inference.dart';
 import 'package:lifeline_mobile/features/consultation/data/local/local_consultation_repository.dart';
 import 'package:lifeline_mobile/features/consultation/domain/models/consultation_draft.dart';
 import 'package:lifeline_mobile/features/consultation/domain/models/consultation_guidance.dart';
 import 'package:lifeline_mobile/features/consultation/domain/models/patient_draft.dart';
+import 'package:lifeline_mobile/features/consultation/domain/models/saved_consultation.dart';
+import 'package:lifeline_mobile/features/consultation/presentation/consultation_history_page.dart';
 import 'package:lifeline_mobile/features/medical_bases/data/index/local_medical_knowledge_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -26,6 +30,16 @@ class FakeInference extends Gemma4OnDeviceInference {
     receivedImagePath = imagePath;
     return response;
   }
+}
+
+class FakeHistoryRepository extends LocalConsultationRepository {
+  FakeHistoryRepository(this.items) : super(factory: databaseFactoryFfi);
+  final List<SavedConsultation> items;
+
+  @override
+  Future<List<SavedConsultation>> list({
+    LocalMedicalKnowledgeRepository? knowledge,
+  }) async => items;
 }
 
 void main() {
@@ -329,5 +343,161 @@ void main() {
     expect(rows.single['professional_help_recommended'], 1);
     expect(rows.single['triage_json'], isNotNull);
     await upgraded.close();
+  });
+
+  test(
+    'history restores pending and completed consultations in recent order',
+    () async {
+      final repository = LocalConsultationRepository(
+        factory: databaseFactoryFfi,
+        databasePath: '${directory.path}/history.db',
+      );
+      addTearDown(repository.close);
+      final firstId = await repository.saveDraft(
+        const ConsultationDraft(
+          description: 'Herida superficial',
+          helpRequested: false,
+          responds: TriageAnswer.yes,
+          breathesNormally: TriageAnswer.yes,
+          heavyBleeding: TriageAnswer.no,
+        ),
+        patient,
+      );
+      final secondId = await repository.saveDraft(
+        const ConsultationDraft(
+          description: 'Sangrado abundante',
+          helpRequested: true,
+        ),
+        const PatientDraft(name: 'Luis', ageYears: 40),
+      );
+      final sources = knowledge.search('herida superficial').first.sources;
+      await repository.saveGuidance(
+        firstId,
+        ConsultationGuidance(
+          status: GuidanceStatus.ready,
+          message: 'Orientación local',
+          measures: const ['Lavar la herida'],
+          medicalIndications: const ['Cubrir con gasa'],
+          professionalHelp: const ['Solicitar valoración si empeora'],
+          sources: sources,
+          preliminaryPriority: PreliminaryPriority.low,
+          professionalHelpRecommended: false,
+        ),
+      );
+      final history = await repository.list(knowledge: knowledge);
+      expect(history.map((item) => item.id), [secondId, firstId]);
+      expect(history.first.guidance, isNull);
+      expect(history.first.canRetry, isTrue);
+      expect(history.last.guidance!.measures, ['Lavar la herida']);
+      expect(history.last.guidance!.sources.first.url, sources.first.url);
+      expect(history.last.guidance!.professionalHelpRecommended, isFalse);
+      expect(history.last.draft.breathesNormally, TriageAnswer.yes);
+      expect(history.last.canRetry, isFalse);
+    },
+  );
+
+  test('retry updates the same pending consultation row', () async {
+    final databasePath = '${directory.path}/retry.db';
+    final repository = LocalConsultationRepository(
+      factory: databaseFactoryFfi,
+      databasePath: databasePath,
+    );
+    addTearDown(repository.close);
+    final id = await repository.saveDraft(
+      const ConsultationDraft(
+        description: 'Corte superficial',
+        helpRequested: false,
+      ),
+      patient,
+    );
+    final pending = await repository.get(id, knowledge: knowledge);
+    expect(pending?.canRetry, isTrue);
+    await repository.saveGuidance(
+      id,
+      const ConsultationGuidance(
+        status: GuidanceStatus.failed,
+        message: 'Error del modelo',
+      ),
+    );
+    expect((await repository.get(id))?.guidance?.status, GuidanceStatus.failed);
+    await repository.saveGuidance(
+      id,
+      const ConsultationGuidance(
+        status: GuidanceStatus.ready,
+        message: 'Orientación recuperada',
+        measures: ['Limpiar el corte'],
+      ),
+    );
+    final restored = await repository.get(id);
+    expect(restored?.guidance?.message, 'Orientación recuperada');
+    expect(restored?.canRetry, isFalse);
+    final db = await databaseFactoryFfi.openDatabase(databasePath);
+    expect(
+      (await db.rawQuery(
+        'SELECT COUNT(*) AS n FROM consultations',
+      )).single['n'],
+      1,
+    );
+    await db.close();
+  });
+
+  testWidgets('history opens saved answer and offers retry for pending item', (
+    tester,
+  ) async {
+    final repository = FakeHistoryRepository([
+      SavedConsultation(
+        id: 2,
+        createdAt: DateTime.utc(2026, 10, 28),
+        draft: const ConsultationDraft(
+          description: 'Sangrado',
+          helpRequested: true,
+        ),
+        patient: const PatientDraft(name: 'Luis', ageYears: 40),
+        guidance: null,
+      ),
+      SavedConsultation(
+        id: 1,
+        createdAt: DateTime.utc(2026, 10, 27),
+        draft: const ConsultationDraft(
+          description: 'Corte leve',
+          helpRequested: false,
+        ),
+        patient: patient,
+        guidance: const ConsultationGuidance(
+          status: GuidanceStatus.ready,
+          message: 'Respuesta guardada',
+          measures: ['Lavar la herida'],
+        ),
+      ),
+    ]);
+    await tester.pumpWidget(
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<LocalConsultationRepository>.value(
+            value: repository,
+          ),
+          RepositoryProvider<LocalMedicalKnowledgeRepository>.value(
+            value: knowledge,
+          ),
+          RepositoryProvider<Gemma4OnDeviceInference>.value(
+            value: FakeInference('{"cards":[],"conditions":[]}'),
+          ),
+        ],
+        child: const MaterialApp(home: ConsultationHistoryPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Luis'), findsOneWidget);
+    expect(find.text('Ana'), findsOneWidget);
+    await tester.tap(find.text('Luis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reintentar orientación'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ana'));
+    await tester.pumpAndSettle();
+    expect(find.text('Respuesta guardada'), findsOneWidget);
+    expect(find.text('1. Lavar la herida'), findsOneWidget);
+    expect(find.text('Reintentar orientación'), findsNothing);
   });
 }

@@ -7,6 +7,7 @@ import '../data/ai/offline_audio_transcriber.dart';
 import '../data/local/private_media_store.dart';
 import '../domain/models/consultation_draft.dart';
 import 'patient_fields_page.dart';
+import 'consultation_history_page.dart';
 import '../../auth/presentation/blocs/auth_cubit.dart';
 
 class ConsultationFormPage extends StatefulWidget {
@@ -198,6 +199,14 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
     appBar: AppBar(
       title: const Text('Nueva consulta'),
       actions: [
+        IconButton(
+          tooltip: 'Consultas guardadas',
+          icon: const Icon(Icons.history),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ConsultationHistoryPage()),
+          ),
+        ),
         TextButton(
           onPressed: () => widget.guest
               ? context.read<AuthCubit>().leaveGuest()

@@ -193,9 +193,15 @@ class ConsultationSummaryPage extends StatefulWidget {
     super.key,
     required this.draft,
     required this.patient,
+    this.savedId,
+    this.initialGuidance,
+    this.fromHistory = false,
   });
   final ConsultationDraft draft;
   final PatientDraft patient;
+  final int? savedId;
+  final ConsultationGuidance? initialGuidance;
+  final bool fromHistory;
 
   @override
   State<ConsultationSummaryPage> createState() =>
@@ -207,6 +213,13 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   int? consultationId;
   bool busy = false;
   String? saveError;
+
+  @override
+  void initState() {
+    super.initState();
+    consultationId = widget.savedId;
+    guidance = widget.initialGuidance;
+  }
 
   Future<void> generateGuidance() async {
     if (busy) return;
@@ -315,6 +328,9 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
               File(widget.draft.photoPath!),
               height: 220,
               fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const Text(
+                'La foto adjunta ya no está disponible en este dispositivo.',
+              ),
             ),
           ),
         if (widget.draft.photoPath != null)
@@ -376,24 +392,29 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                 '${source.institution}: ${source.title}\n${source.url}',
             ]),
           ],
-        ],
+        ] else if (consultationId != null)
+          const Text(
+            'Orientación pendiente. Puedes reintentarla cuando el modelo esté listo.',
+          ),
         if (saveError != null) Text(saveError!),
         const SizedBox(height: 16),
-        FilledButton(
-          onPressed: busy ? null : generateGuidance,
-          child: Text(
-            busy
-                ? 'Preparando orientación local...'
-                : guidance == null
-                ? 'Guardar y obtener orientación'
-                : 'Volver a generar orientación',
+        if (guidance == null || !guidance!.isReady)
+          FilledButton(
+            onPressed: busy ? null : generateGuidance,
+            child: Text(
+              busy
+                  ? 'Preparando orientación local...'
+                  : consultationId == null
+                  ? 'Guardar y obtener orientación'
+                  : 'Reintentar orientación',
+            ),
           ),
-        ),
         if (busy) const Center(child: CircularProgressIndicator()),
-        OutlinedButton(
-          onPressed: busy ? null : () => Navigator.pop(context),
-          child: const Text('Editar datos'),
-        ),
+        if (!widget.fromHistory)
+          OutlinedButton(
+            onPressed: busy ? null : () => Navigator.pop(context),
+            child: const Text('Editar datos'),
+          ),
       ],
     ),
   );
