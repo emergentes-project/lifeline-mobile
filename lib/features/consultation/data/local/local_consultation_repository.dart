@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
@@ -8,6 +9,18 @@ import '../../domain/models/consultation_guidance.dart';
 import '../../domain/models/patient_draft.dart';
 import '../../domain/models/saved_consultation.dart';
 import '../../../medical_bases/data/index/local_medical_knowledge_repository.dart';
+
+final _uuidRandom = Random.secure();
+
+String _uuidV4() {
+  final bytes = List<int>.generate(16, (_) => _uuidRandom.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+}
 
 class LocalConsultationRepository {
   LocalConsultationRepository({DatabaseFactory? factory, String? databasePath})
@@ -29,6 +42,9 @@ class LocalConsultationRepository {
       'created_at': DateTime.now().toUtc().toIso8601String(),
       'description': draft.description.trim(),
       'help_requested': draft.helpRequested ? 1 : 0,
+      'mobile_consultation_id': _uuidV4(),
+      'idempotency_key': _uuidV4(),
+      'sync_status': 'pending',
       'photo_path': draft.photoPath,
       'audio_path': draft.audioPath,
       'triage_json': jsonEncode({
@@ -96,6 +112,28 @@ class LocalConsultationRepository {
           'professional_help_recommended': guidance.professionalHelpRecommended,
         }),
       },
+      where: 'id = ? AND owner_key = ?',
+      whereArgs: [id, ownerKey],
+    );
+    if (updated == 0) {
+      throw StateError('Consulta no disponible para este usuario.');
+    }
+  }
+
+  Future<void> updateDelivery(
+    int id, {
+    required String ownerKey,
+    required String syncStatus,
+    String? backendConsultationId,
+  }) async {
+    final db = await _open();
+    final values = <String, Object?>{'sync_status': syncStatus};
+    if (backendConsultationId != null && backendConsultationId.isNotEmpty) {
+      values['backend_consultation_id'] = backendConsultationId;
+    }
+    final updated = await db.update(
+      'consultations',
+      values,
       where: 'id = ? AND owner_key = ?',
       whereArgs: [id, ownerKey],
     );
@@ -196,6 +234,10 @@ class LocalConsultationRepository {
               longitude: (patientJson['longitude'] as num?)?.toDouble(),
               requesterPhone: patientJson['requester_phone'] as String?,
             ),
+      mobileConsultationId: row['mobile_consultation_id'] as String? ?? '',
+      idempotencyKey: row['idempotency_key'] as String? ?? '',
+      backendConsultationId: row['backend_consultation_id'] as String?,
+      syncStatus: row['sync_status'] as String? ?? 'pending',
       guidance: status == GuidanceStatus.ready || guidanceJson != null
           ? ConsultationGuidance(
               status: status,
@@ -228,7 +270,7 @@ class LocalConsultationRepository {
             'lifeline_consultations.db',
           ),
       options: OpenDatabaseOptions(
-        version: 4,
+        version: 5,
         onCreate: (db, _) async {
           await db.execute('''
             CREATE TABLE consultations (
@@ -244,7 +286,11 @@ class LocalConsultationRepository {
               guidance_status TEXT NOT NULL,
               guidance_json TEXT,
               preliminary_priority TEXT,
-              professional_help_recommended INTEGER
+              professional_help_recommended INTEGER,
+              mobile_consultation_id TEXT NOT NULL,
+              idempotency_key TEXT NOT NULL,
+              backend_consultation_id TEXT,
+              sync_status TEXT NOT NULL
             )
           ''');
         },
@@ -266,6 +312,47 @@ class LocalConsultationRepository {
             await db.execute(
               "ALTER TABLE consultations ADD COLUMN owner_key TEXT NOT NULL DEFAULT 'legacy-unassigned'",
             );
+          }
+          if (oldVersion < 5) {
+            await db.execute(
+              'ALTER TABLE consultations ADD COLUMN mobile_consultation_id TEXT',
+            );
+            await db.execute(
+              'ALTER TABLE consultations ADD COLUMN idempotency_key TEXT',
+            );
+            await db.execute(
+              'ALTER TABLE consultations ADD COLUMN backend_consultation_id TEXT',
+            );
+            await db.execute(
+              "ALTER TABLE consultations ADD COLUMN sync_status TEXT NOT NULL DEFAULT 'pending'",
+            );
+            final rows = await db.query(
+              'consultations',
+              columns: ['id', 'mobile_consultation_id', 'idempotency_key'],
+            );
+            for (final row in rows) {
+              final mobile = row['mobile_consultation_id'] as String?;
+              final key = row['idempotency_key'] as String?;
+              if (mobile != null &&
+                  mobile.isNotEmpty &&
+                  key != null &&
+                  key.isNotEmpty) {
+                continue;
+              }
+              await db.update(
+                'consultations',
+                {
+                  'mobile_consultation_id': mobile == null || mobile.isEmpty
+                      ? _uuidV4()
+                      : mobile,
+                  'idempotency_key': key == null || key.isEmpty
+                      ? _uuidV4()
+                      : key,
+                },
+                where: 'id = ?',
+                whereArgs: [row['id']],
+              );
+            }
           }
         },
       ),

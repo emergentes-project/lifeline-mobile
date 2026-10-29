@@ -11,6 +11,7 @@ import 'features/cases/data/professional_verification_adapter.dart';
 import 'features/cases/application/case_management_service.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/presentation/blocs/auth_cubit.dart';
+import 'features/consultation/application/consultation_sync_service.dart';
 import 'features/consultation/data/ai/gemma4_on_device_inference.dart';
 import 'features/consultation/data/local/local_consultation_repository.dart';
 import 'features/medical_bases/data/index/local_medical_knowledge_repository.dart';
@@ -33,6 +34,11 @@ Future<void> main() async {
     cases: caseApi,
     verification: ProfessionalVerificationAdapter(profileApi),
   );
+  final consultations = LocalConsultationRepository();
+  final consultationSync = ConsultationSyncService(
+    repository: consultations,
+    client: http.Client(),
+  );
   runApp(
     MultiRepositoryProvider(
       providers: [
@@ -43,7 +49,10 @@ Future<void> main() async {
           value: Gemma4OnDeviceInference(),
         ),
         RepositoryProvider<LocalConsultationRepository>.value(
-          value: LocalConsultationRepository(),
+          value: consultations,
+        ),
+        RepositoryProvider<ConsultationSyncService>.value(
+          value: consultationSync,
         ),
         RepositoryProvider<ProfileApiService>.value(value: profileApi),
         RepositoryProvider<CaseApiService>.value(value: caseApi),

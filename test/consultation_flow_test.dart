@@ -562,6 +562,9 @@ void main() {
         ),
         patient: const PatientDraft(name: 'Luis', ageYears: 40),
         guidance: null,
+        mobileConsultationId: '11111111-1111-4111-8111-111111111111',
+        idempotencyKey: '22222222-2222-4222-8222-222222222222',
+        syncStatus: 'pending',
       ),
       SavedConsultation(
         id: 1,
@@ -576,6 +579,9 @@ void main() {
           message: 'Respuesta guardada',
           measures: ['Lavar la herida'],
         ),
+        mobileConsultationId: '33333333-3333-4333-8333-333333333333',
+        idempotencyKey: '44444444-4444-4444-8444-444444444444',
+        syncStatus: 'pending',
       ),
     ]);
     await tester.pumpWidget(

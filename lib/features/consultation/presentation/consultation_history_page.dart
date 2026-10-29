@@ -7,7 +7,9 @@ import '../domain/models/consultation_guidance.dart';
 import '../domain/models/saved_consultation.dart';
 import 'patient_fields_page.dart';
 import '../../auth/presentation/blocs/auth_cubit.dart';
+import '../../auth/presentation/blocs/auth_state.dart';
 import '../application/consultation_owner.dart';
+import '../application/consultation_sync_service.dart';
 import '../../../core/presentation/app_message_view.dart';
 
 class ConsultationHistoryPage extends StatefulWidget {
@@ -20,16 +22,40 @@ class ConsultationHistoryPage extends StatefulWidget {
 
 class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
   late Future<List<SavedConsultation>> consultations;
+  final deliveryErrors = <int, String>{};
 
   @override
   void initState() {
     super.initState();
-    refresh();
+    consultations = load();
   }
 
-  void refresh() {
-    consultations = context.read<LocalConsultationRepository>().list(
-      ownerKey: consultationOwnerKey(context.read<AuthCubit>().state),
+  Future<List<SavedConsultation>> load() async {
+    final auth = context.read<AuthCubit>().state;
+    final ownerKey = consultationOwnerKey(auth);
+    final sync = _provided<ConsultationSyncService>(context);
+    if (sync != null) {
+      try {
+        final outcomes = await sync.syncPending(
+          ownerKey: ownerKey,
+          citizenUserId: auth.status == AuthStatus.authenticated
+              ? auth.user?.id
+              : null,
+        );
+        deliveryErrors
+          ..clear()
+          ..addAll({
+            for (final outcome in outcomes)
+              if (outcome.errorMessage != null)
+                outcome.localId: outcome.errorMessage!,
+          });
+      } catch (_) {
+        deliveryErrors.clear();
+      }
+    }
+    if (!mounted) return const [];
+    return context.read<LocalConsultationRepository>().list(
+      ownerKey: ownerKey,
       knowledge: context.read<LocalMedicalKnowledgeRepository>(),
     );
   }
@@ -53,6 +79,15 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
     null => 'Prioridad pendiente',
   };
 
+  String _deliveryLine(SavedConsultation item) {
+    if (!item.draft.helpRequested) return '';
+    final status = item.syncStatus == 'confirmed'
+        ? 'Envío confirmado.'
+        : 'Envío pendiente. Se reintentará con la misma consulta.';
+    final error = deliveryErrors[item.id];
+    return error == null ? '\n$status' : '\n$status\n$error';
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Consultas guardadas')),
@@ -72,7 +107,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
             title: 'No se pudo abrir el historial',
             message: 'Las consultas siguen guardadas en este dispositivo.',
             actionLabel: 'Reintentar',
-            onAction: () => setState(refresh),
+            onAction: () => setState(() {
+              consultations = load();
+            }),
           );
         }
         final items = snapshot.data ?? const <SavedConsultation>[];
@@ -85,8 +122,11 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
         }
         return RefreshIndicator(
           onRefresh: () async {
-            setState(refresh);
-            await consultations;
+            final future = load();
+            setState(() {
+              consultations = future;
+            });
+            await future;
           },
           child: ListView.builder(
             itemCount: items.length,
@@ -114,8 +154,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                   subtitle: Text(
                     '${item.createdAt.toLocal().day}/${item.createdAt.toLocal().month}/${item.createdAt.toLocal().year} · '
                     '${statusLabel(item)} · ${priorityLabel(item.guidance?.preliminaryPriority)}\n'
-                    '${item.draft.description.isEmpty ? 'Sin descripción' : item.draft.description}',
-                    maxLines: 3,
+                    '${item.draft.description.isEmpty ? 'Sin descripción' : item.draft.description}'
+                    '${_deliveryLine(item)}',
+                    maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                   ),
                   isThreeLine: true,
@@ -130,10 +171,17 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                           savedId: item.id,
                           initialGuidance: item.guidance,
                           fromHistory: true,
+                          initialSyncStatus: item.syncStatus,
+                          initialBackendConsultationId:
+                              item.backendConsultationId,
                         ),
                       ),
                     );
-                    if (context.mounted) setState(refresh);
+                    if (context.mounted) {
+                      setState(() {
+                        consultations = load();
+                      });
+                    }
                   },
                 ),
               );
@@ -143,4 +191,12 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
       },
     ),
   );
+}
+
+T? _provided<T>(BuildContext context) {
+  try {
+    return context.read<T>();
+  } on ProviderNotFoundException {
+    return null;
+  }
 }

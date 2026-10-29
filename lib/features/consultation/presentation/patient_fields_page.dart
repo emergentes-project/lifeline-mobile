@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../application/consultation_sync_service.dart';
 import '../data/ai/consultation_guidance_service.dart';
 import '../data/ai/gemma4_on_device_inference.dart';
 import '../data/local/local_consultation_repository.dart';
@@ -10,6 +11,9 @@ import '../domain/models/patient_draft.dart';
 import '../data/device/device_location_service.dart';
 import '../../medical_bases/data/index/local_medical_knowledge_repository.dart';
 import '../../auth/presentation/blocs/auth_cubit.dart';
+import '../../auth/presentation/blocs/auth_state.dart';
+import '../../cases/data/case_api_service.dart';
+import '../../cases/presentation/cases_page.dart' show caseStatusLabel;
 import '../application/consultation_owner.dart';
 
 class PatientFieldsPage extends StatefulWidget {
@@ -220,12 +224,16 @@ class ConsultationSummaryPage extends StatefulWidget {
     this.savedId,
     this.initialGuidance,
     this.fromHistory = false,
+    this.initialSyncStatus = 'pending',
+    this.initialBackendConsultationId,
   });
   final ConsultationDraft draft;
   final PatientDraft? patient;
   final int? savedId;
   final ConsultationGuidance? initialGuidance;
   final bool fromHistory;
+  final String initialSyncStatus;
+  final String? initialBackendConsultationId;
 
   @override
   State<ConsultationSummaryPage> createState() =>
@@ -240,6 +248,10 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   late bool helpRequested;
   bool busy = false;
   String? saveError;
+  late String syncStatus;
+  String? backendConsultationId;
+  String? deliveryError;
+  String? remoteCaseLabel;
 
   @override
   void initState() {
@@ -249,9 +261,15 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     guidance = widget.initialGuidance;
     patient = widget.patient;
     helpRequested = widget.draft.helpRequested;
+    syncStatus = widget.initialSyncStatus;
+    backendConsultationId = widget.initialBackendConsultationId;
     if (consultationId == null && guidance == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) generateGuidance();
+      });
+    } else if (saved && helpRequested && syncStatus == 'confirmed') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) loadRemoteCase();
       });
     }
   }
@@ -331,7 +349,8 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
         guidance!,
         ownerKey: ownerKey,
       );
-      if (mounted) setState(() => saved = true);
+      if (!mounted) return;
+      await deliver(consultations, ownerKey);
     } catch (_) {
       if (mounted) {
         setState(
@@ -341,6 +360,87 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  Future<void> deliver(
+    LocalConsultationRepository consultations,
+    String ownerKey,
+  ) async {
+    final auth = context.read<AuthCubit>().state;
+    final sync = _provided<ConsultationSyncService>(context);
+    ConsultationSyncAttempt? attempt;
+    if (sync != null && consultationId != null) {
+      try {
+        final outcomes = await sync.syncPending(
+          ownerKey: ownerKey,
+          citizenUserId: auth.status == AuthStatus.authenticated
+              ? auth.user?.id
+              : null,
+        );
+        attempt = outcomes
+            .where((item) => item.localId == consultationId)
+            .firstOrNull;
+      } catch (_) {
+        attempt = null;
+      }
+    }
+    if (!mounted || consultationId == null) return;
+    final row = await consultations.get(consultationId!, ownerKey: ownerKey);
+    if (!mounted) return;
+    final label =
+        row?.syncStatus == 'confirmed' &&
+            helpRequested &&
+            row?.backendConsultationId != null
+        ? await lookupCaseLabel(row!.backendConsultationId!)
+        : null;
+    if (!mounted) return;
+    setState(() {
+      saved = true;
+      if (row != null) {
+        syncStatus = row.syncStatus;
+        backendConsultationId = row.backendConsultationId;
+      }
+      deliveryError = attempt?.errorMessage;
+      remoteCaseLabel = label;
+    });
+  }
+
+  Future<void> loadRemoteCase() async {
+    final backendId = backendConsultationId;
+    if (!helpRequested || syncStatus != 'confirmed' || backendId == null) {
+      return;
+    }
+    final label = await lookupCaseLabel(backendId);
+    if (!mounted || label == null) return;
+    setState(() => remoteCaseLabel = label);
+  }
+
+  Future<String?> lookupCaseLabel(String backendId) async {
+    final auth = context.read<AuthCubit>().state;
+    if (auth.status != AuthStatus.authenticated ||
+        auth.user?.isCitizen != true) {
+      return null;
+    }
+    final token = auth.user!.token;
+    final api = _provided<CaseApiService>(context);
+    if (api == null) return null;
+    try {
+      final cases = await api.listForCitizen(token);
+      for (final item in cases) {
+        if (item.consultationId == backendId) {
+          return caseStatusLabel(item.status);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  String? deliveryTitle() {
+    if (!saved || !helpRequested) return null;
+    if (syncStatus == 'confirmed') {
+      return remoteCaseLabel ?? 'Envío confirmado.';
+    }
+    return 'Envío pendiente. Se reintentará con la misma consulta.';
   }
 
   Widget section(String title, List<String> items, {String? lead}) => Column(
@@ -435,20 +535,22 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
           const Text(
             'Gemma analizará señales visibles de la foto junto con tu descripción. No usará la imagen para inferir un diagnóstico, la respiración ni el estado de conciencia.',
           ),
-        if (saved && helpRequested)
-          const ListTile(
-            leading: Icon(Icons.medical_services_outlined),
-            title: Text('Deseas solicitar apoyo profesional'),
-            subtitle: Text(
-              'La solicitud aún no se ha enviado a un profesional.',
+        if (deliveryTitle() case final title?)
+          ListTile(
+            leading: Icon(
+              syncStatus == 'confirmed'
+                  ? Icons.cloud_done_outlined
+                  : Icons.cloud_upload_outlined,
             ),
+            title: Text(title),
+            subtitle: deliveryError == null ? null : Text(deliveryError!),
           ),
         const SizedBox(height: 16),
         const Card(
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Text(
-              'Antes de seguir: ¿el lugar es seguro?, ¿la persona responde?, ¿respira normalmente?, ¿hay sangrado intenso? Si falta una respuesta, vuelve y añádela a la descripción para elegir la indicación adecuada. Si la persona no puede responder o hay una señal grave, busca ayuda profesional inmediatamente. El envío a profesionales aún no está disponible en esta versión de la app.',
+              'Antes de seguir: ¿el lugar es seguro?, ¿la persona responde?, ¿respira normalmente?, ¿hay sangrado intenso? Si falta una respuesta, vuelve y añádela a la descripción para elegir la indicación adecuada. Si la persona no puede responder o hay una señal grave, busca ayuda profesional inmediatamente.',
             ),
           ),
         ),
@@ -456,9 +558,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
           const Card(
             child: Padding(
               padding: EdgeInsets.all(16),
-              child: Text(
-                'Busca apoyo profesional inmediatamente. El envío desde la app aún no está disponible.',
-              ),
+              child: Text('Busca apoyo profesional inmediatamente.'),
             ),
           ),
         if (guidance case final result?) ...[
@@ -497,9 +597,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Solicitar apoyo profesional'),
-              subtitle: const Text(
-                'Decide después de leer la orientación. El envío a profesionales aún no está disponible.',
-              ),
+              subtitle: const Text('Decide después de leer la orientación.'),
               value: helpRequested,
               onChanged: busy
                   ? null
@@ -516,6 +614,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
             'Orientación pendiente. Puedes reintentarla cuando el modelo esté listo.',
           ),
         if (saveError != null) Text(saveError!),
+        if (deliveryError != null && !helpRequested) Text(deliveryError!),
         const SizedBox(height: 16),
         if (guidance == null || !guidance!.isReady)
           FilledButton(
@@ -554,4 +653,12 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
       ],
     ),
   );
+}
+
+T? _provided<T>(BuildContext context) {
+  try {
+    return context.read<T>();
+  } on ProviderNotFoundException {
+    return null;
+  }
 }
