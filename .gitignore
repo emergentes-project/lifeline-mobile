@@ -36,6 +36,8 @@ migrate_working_dir/
 /local_models/*
 !/local_models/README.md
 /android/app/src/main/assets/gemma-4-E2B-it.litertlm
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
 
 # Symbolication related
 app.*.symbols

@@ -14,6 +14,7 @@ import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/blocs/auth_state.dart';
 import '../../cases/data/case_api_service.dart';
 import '../../cases/presentation/cases_page.dart' show caseStatusLabel;
+import '../../notifications/application/publish_notification_token.dart';
 import '../application/consultation_owner.dart';
 
 class PatientFieldsPage extends StatefulWidget {
@@ -403,6 +404,8 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
       deliveryError = attempt?.errorMessage;
       remoteCaseLabel = label;
     });
+    if (!mounted || row == null) return;
+    await publishNotificationToken(context, auth: auth, consultations: [row]);
   }
 
   Future<void> loadRemoteCase() async {

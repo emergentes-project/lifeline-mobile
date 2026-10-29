@@ -50,6 +50,10 @@ flutter {
     source = "../.."
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 dependencies {
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
 }

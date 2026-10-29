@@ -15,6 +15,8 @@ import 'features/consultation/application/consultation_sync_service.dart';
 import 'features/consultation/data/ai/gemma4_on_device_inference.dart';
 import 'features/consultation/data/local/local_consultation_repository.dart';
 import 'features/medical_bases/data/index/local_medical_knowledge_repository.dart';
+import 'features/notifications/application/notification_registration.dart';
+import 'features/notifications/data/firebase_device_notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +41,10 @@ Future<void> main() async {
     repository: consultations,
     client: http.Client(),
   );
+  final notificationRegistration = NotificationRegistration(
+    client: http.Client(),
+    sent: SecureSentNotificationTokens(const FlutterSecureStorage()),
+  );
   runApp(
     MultiRepositoryProvider(
       providers: [
@@ -53,6 +59,12 @@ Future<void> main() async {
         ),
         RepositoryProvider<ConsultationSyncService>.value(
           value: consultationSync,
+        ),
+        RepositoryProvider<NotificationRegistration>.value(
+          value: notificationRegistration,
+        ),
+        RepositoryProvider<FirebaseDeviceNotifications>.value(
+          value: FirebaseDeviceNotifications(),
         ),
         RepositoryProvider<ProfileApiService>.value(value: profileApi),
         RepositoryProvider<CaseApiService>.value(value: caseApi),
