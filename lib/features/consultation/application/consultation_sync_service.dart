@@ -104,7 +104,11 @@ class ConsultationSyncService {
       );
     }
 
-    final uploaded = await _postPhoto(backendId!, photoPath);
+    final uploaded = await _postPhoto(
+      backendId!,
+      photoPath,
+      row.idempotencyKey,
+    );
     if (!uploaded.accepted) {
       return ConsultationSyncAttempt(
         localId: row.id,
@@ -169,7 +173,11 @@ class ConsultationSyncService {
     }
   }
 
-  Future<_HttpResult> _postPhoto(String backendId, String photoPath) async {
+  Future<_HttpResult> _postPhoto(
+    String backendId,
+    String photoPath,
+    String idempotencyKey,
+  ) async {
     final contentType = _imageContentType(photoPath);
     if (contentType == null) {
       return const _HttpResult(
@@ -182,6 +190,7 @@ class ConsultationSyncService {
         'POST',
         _uri('/api/v1/consultation-submissions/$backendId/photo'),
       );
+      request.headers['Idempotency-Key'] = idempotencyKey;
       request.files.add(
         http.MultipartFile.fromBytes(
           'file',
@@ -240,6 +249,8 @@ class ConsultationSyncService {
       'inputText': text.isEmpty ? null : text,
       'photoStorageKey': null,
       'helpRequested': row.draft.helpRequested,
+      if (patient != null && patient.requesterPhone != null)
+        'requesterPhone': patient.requesterPhone,
       'patient': patient == null
           ? null
           : {

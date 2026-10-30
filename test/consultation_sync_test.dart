@@ -176,67 +176,71 @@ void main() {
     expect(stored?.patient?.requesterPhone, '999111222');
   });
 
-  test('helpRequested true sends patient.phone', () async {
-    final repository = await _repository(directory, 'help.db');
-    await _saveReady(
-      repository,
-      ownerKey: 'user:alice',
-      helpRequested: true,
-      patient: _patient,
-      priority: PreliminaryPriority.high,
-      source: const MedicalSource(
-        id: 'minsa',
-        institution: 'MINSA',
-        title: 'Guía',
-        url: 'https://example.test/guia',
-        edition: '2024',
-      ),
-    );
-    late Map<String, dynamic> body;
-    final service = _service(
-      repository,
-      MockClient((request) async {
-        body = _jsonBody(request);
-        expect(request.headers['authorization'], isNull);
-        return http.Response(jsonEncode({'id': 'backend-help'}), 201);
-      }),
-    );
+  test(
+    'helpRequested true sends the requester phone for case details',
+    () async {
+      final repository = await _repository(directory, 'help.db');
+      await _saveReady(
+        repository,
+        ownerKey: 'user:alice',
+        helpRequested: true,
+        patient: _patient,
+        priority: PreliminaryPriority.high,
+        source: const MedicalSource(
+          id: 'minsa',
+          institution: 'MINSA',
+          title: 'Guía',
+          url: 'https://example.test/guia',
+          edition: '2024',
+        ),
+      );
+      late Map<String, dynamic> body;
+      final service = _service(
+        repository,
+        MockClient((request) async {
+          body = _jsonBody(request);
+          expect(request.headers['authorization'], isNull);
+          return http.Response(jsonEncode({'id': 'backend-help'}), 201);
+        }),
+      );
 
-    await service.syncPending(
-      ownerKey: 'user:alice',
-      citizenUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    );
-    expect(body['helpRequested'], isTrue);
-    expect(body['citizenUserId'], 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
-    expect(body['inputText'], 'Corte superficial');
-    expect(body['photoStorageKey'], isNull);
-    expect(body['patient']['name'], 'Ana');
-    expect(body['patient']['ageYears'], 32);
-    expect(body['patient']['province'], 'Lima');
-    expect(body['patient']['locationDescription'], 'Parque');
-    expect(body['patient']['latitude'], -12.0464);
-    expect(body['patient']['longitude'], -77.0428);
-    expect(body['patient']['phone'], '999111222');
-    expect(body['patient'].containsKey('requesterPhone'), isFalse);
-    expect(body['answer']['guidanceStatus'], 'GENERATED');
-    expect(body['answer']['guidanceText'], 'Lavar la herida');
-    expect(body['answer']['preliminaryPriority'], 'HIGH');
-    expect(body['answer']['professionalHelpRecommended'], isTrue);
-    expect(body['answer']['sourceReferences'], [
-      {
-        'institution': 'MINSA',
-        'title': 'Guía',
-        'url': 'https://example.test/guia',
-      },
-    ]);
-    expect(body['consultationRecordedAt'], matches(_recordedAt));
-  });
+      await service.syncPending(
+        ownerKey: 'user:alice',
+        citizenUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      );
+      expect(body['helpRequested'], isTrue);
+      expect(body['citizenUserId'], 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+      expect(body['inputText'], 'Corte superficial');
+      expect(body['photoStorageKey'], isNull);
+      expect(body['patient']['name'], 'Ana');
+      expect(body['patient']['ageYears'], 32);
+      expect(body['patient']['province'], 'Lima');
+      expect(body['patient']['locationDescription'], 'Parque');
+      expect(body['patient']['latitude'], -12.0464);
+      expect(body['patient']['longitude'], -77.0428);
+      expect(body['patient']['phone'], '999111222');
+      expect(body['requesterPhone'], '999111222');
+      expect(body['patient'].containsKey('requesterPhone'), isFalse);
+      expect(body['answer']['guidanceStatus'], 'GENERATED');
+      expect(body['answer']['guidanceText'], 'Lavar la herida');
+      expect(body['answer']['preliminaryPriority'], 'HIGH');
+      expect(body['answer']['professionalHelpRecommended'], isTrue);
+      expect(body['answer']['sourceReferences'], [
+        {
+          'institution': 'MINSA',
+          'title': 'Guía',
+          'url': 'https://example.test/guia',
+        },
+      ]);
+      expect(body['consultationRecordedAt'], matches(_recordedAt));
+    },
+  );
 
   test('photo is uploaded in a second request using the backend id', () async {
     final repository = await _repository(directory, 'photo.db');
     final photo = File('${directory.path}${Platform.pathSeparator}wound.jpg');
     await photo.writeAsBytes([1, 2, 3, 4]);
-    await _saveReady(
+    final before = await _saveReady(
       repository,
       ownerKey: 'guest',
       helpRequested: true,
@@ -250,10 +254,11 @@ void main() {
         paths.add(request.url.path);
         expect(request.headers['authorization'], isNull);
         if (request.url.path.endsWith('/photo')) {
+          expect(request.headers['idempotency-key'], before.idempotencyKey);
           final payload = utf8.decode(request.bodyBytes, allowMalformed: true);
           expect(payload, contains('name="file"'));
           expect(payload.toLowerCase(), contains('image/jpeg'));
-          return http.Response('stored', 201);
+          return http.Response(jsonEncode({'storageKey': 'stored'}), 200);
         }
         return http.Response(jsonEncode({'id': 'backend-photo'}), 201);
       }),
@@ -287,6 +292,7 @@ void main() {
         repository,
         MockClient((request) async {
           if (request.url.path.endsWith('/photo')) {
+            expect(request.headers['idempotency-key'], before.idempotencyKey);
             photoCalls++;
             if (photoCalls == 1) throw const SocketException('offline');
             expect(
@@ -299,7 +305,7 @@ void main() {
             );
             expect(payload, contains('name="file"'));
             expect(payload.toLowerCase(), contains('image/png'));
-            return http.Response('stored', 200);
+            return http.Response(jsonEncode({'storageKey': 'stored'}), 200);
           }
           jsonCalls++;
           return http.Response(jsonEncode({'id': 'backend-photo'}), 201);
@@ -505,7 +511,9 @@ void main() {
     expect(attempts, isEmpty);
   });
 
-  testWidgets('guest does not read cases after a confirmed send', (tester) async {
+  testWidgets('guest does not read cases after a confirmed send', (
+    tester,
+  ) async {
     final calls = <http.Request>[];
     final api = CaseApiService(
       MockClient((request) async {
