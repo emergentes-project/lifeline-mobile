@@ -45,15 +45,17 @@ class ConsultationSyncService {
     final rows = await repository.list(ownerKey: ownerKey);
     final attempts = <ConsultationSyncAttempt>[];
     for (final row in rows) {
-      if (row.syncStatus != 'pending') continue;
-      if (row.guidance?.isReady != true) continue;
-      if (row.mobileConsultationId.isEmpty || row.idempotencyKey.isEmpty) {
-        continue;
-      }
+      if (!_isFinalized(row)) continue;
       attempts.add(await _syncOne(row, ownerKey, citizenUserId));
     }
     return attempts;
   }
+
+  bool _isFinalized(SavedConsultation row) =>
+      row.syncStatus == 'pending' &&
+      row.guidance?.isReady == true &&
+      row.mobileConsultationId.isNotEmpty &&
+      row.idempotencyKey.isNotEmpty;
 
   Future<ConsultationSyncAttempt> _syncOne(
     SavedConsultation row,

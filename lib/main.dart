@@ -14,6 +14,7 @@ import 'features/auth/presentation/blocs/auth_cubit.dart';
 import 'features/consultation/application/consultation_sync_service.dart';
 import 'features/consultation/data/ai/gemma4_on_device_inference.dart';
 import 'features/consultation/data/local/local_consultation_repository.dart';
+import 'features/consultation/data/local/private_media_store.dart';
 import 'features/medical_bases/data/index/local_medical_knowledge_repository.dart';
 import 'features/notifications/application/delivery_confirmation_notices.dart';
 import 'features/notifications/application/notification_registration.dart';
@@ -51,7 +52,9 @@ Future<void> main() async {
     cases: caseApi,
     verification: ProfessionalVerificationAdapter(profileApi),
   );
-  final consultations = LocalConsultationRepository();
+  final consultations = LocalConsultationRepository(
+    mediaDirectory: PrivateMediaStore().directory,
+  );
   final consultationSync = ConsultationSyncService(
     repository: consultations,
     client: http.Client(),

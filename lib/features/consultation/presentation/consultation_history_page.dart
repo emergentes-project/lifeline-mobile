@@ -98,6 +98,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
 
   String _deliveryLine(SavedConsultation item) {
     if (!item.draft.helpRequested) return '';
+    if (item.syncStatus != 'pending' && item.syncStatus != 'confirmed') {
+      return '';
+    }
     final status = item.syncStatus == 'confirmed'
         ? 'Envío confirmado.'
         : 'Envío pendiente. Se reintentará con la misma consulta.';

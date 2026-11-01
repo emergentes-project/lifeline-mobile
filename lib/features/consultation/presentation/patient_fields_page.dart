@@ -342,16 +342,20 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     try {
       final consultations = context.read<LocalConsultationRepository>();
       final ownerKey = consultationOwnerKey(context.read<AuthCubit>().state);
-      consultationId ??= await consultations.saveDraft(
-        widget.draft.withHelpRequested(helpRequested),
-        patient,
-        ownerKey: ownerKey,
-      );
-      await consultations.saveGuidance(
-        consultationId!,
-        guidance!,
-        ownerKey: ownerKey,
-      );
+      if (consultationId == null) {
+        consultationId = await consultations.saveCompleteConsultation(
+          draft: widget.draft.withHelpRequested(helpRequested),
+          patient: patient,
+          guidance: guidance!,
+          ownerKey: ownerKey,
+        );
+      } else {
+        await consultations.saveGuidance(
+          consultationId!,
+          guidance!,
+          ownerKey: ownerKey,
+        );
+      }
       if (!mounted) return;
       await deliver(consultations, ownerKey);
     } catch (_) {
@@ -461,6 +465,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     if (syncStatus == 'confirmed') {
       return remoteCaseLabel ?? 'Envío confirmado.';
     }
+    if (syncStatus != 'pending') return null;
     return 'Envío pendiente. Se reintentará con la misma consulta.';
   }
 
