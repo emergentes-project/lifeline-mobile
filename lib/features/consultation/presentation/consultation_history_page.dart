@@ -25,6 +25,7 @@ class ConsultationHistoryPage extends StatefulWidget {
 class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
   late Future<List<SavedConsultation>> consultations;
   final deliveryErrors = <int, String>{};
+  List<SyncFailureCount> failureCounts = const [];
 
   @override
   void initState() {
@@ -73,6 +74,12 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
       await notices.announce(before, items);
     }
     if (!mounted) return items;
+    try {
+      failureCounts = await repository.syncFailureCounts(ownerKey: ownerKey);
+    } catch (_) {
+      failureCounts = const [];
+    }
+    if (!mounted) return items;
     await publishNotificationToken(context, auth: auth, consultations: items);
     return items;
   }
@@ -94,6 +101,29 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
     PreliminaryPriority.medium => 'Prioridad media',
     PreliminaryPriority.low => 'Prioridad baja',
     null => 'Prioridad pendiente',
+  };
+
+  String _failureCountLine(List<SyncFailureCount> counts) => counts
+      .map(
+        (item) =>
+            '${_failureTypeLabel(item.type)} · ${_failureOperationLabel(item.operation)}: ${item.count}',
+      )
+      .join('\n');
+
+  String _failureTypeLabel(String type) => switch (type) {
+    'timeout' => 'Tiempo agotado',
+    'network' => 'Sin conexión',
+    'http_400' => 'Rechazo 400',
+    'http_409' => 'Conflicto',
+    'http_5xx' => 'Error del servidor',
+    'missing_photo' => 'Foto ausente',
+    _ => 'Respuesta inválida',
+  };
+
+  String _failureOperationLabel(String operation) => switch (operation) {
+    'post_consultation' => 'envío de la consulta',
+    'post_photo' => 'envío de la foto',
+    _ => 'actualización local',
   };
 
   String _deliveryLine(SavedConsultation item) {
@@ -149,9 +179,19 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
             await future;
           },
           child: ListView.builder(
-            itemCount: items.length,
+            itemCount: items.length + (failureCounts.isEmpty ? 0 : 1),
             itemBuilder: (context, index) {
-              final item = items[index];
+              if (failureCounts.isNotEmpty && index == 0) {
+                return Card(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                  child: ListTile(
+                    leading: const Icon(Icons.insights_outlined),
+                    title: const Text('Fallos de envío'),
+                    subtitle: Text(_failureCountLine(failureCounts)),
+                  ),
+                );
+              }
+              final item = items[failureCounts.isEmpty ? index : index - 1];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: ListTile(

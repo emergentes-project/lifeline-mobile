@@ -66,6 +66,7 @@ class ConsultationSyncService {
     if (backendId == null || backendId.isEmpty) {
       final sent = await _postConsultation(row, citizenUserId);
       if (sent.backendId == null) {
+        await _remember(row, 'post_consultation', sent);
         return ConsultationSyncAttempt(
           localId: row.id,
           syncStatus: 'pending',
@@ -73,22 +74,37 @@ class ConsultationSyncService {
         );
       }
       backendId = sent.backendId;
-      await repository.updateDelivery(
-        row.id,
+      final saved = await _saveDelivery(
+        row,
         ownerKey: ownerKey,
         syncStatus: 'pending',
         backendConsultationId: backendId,
       );
+      if (!saved) {
+        return ConsultationSyncAttempt(
+          localId: row.id,
+          syncStatus: 'pending',
+          errorMessage: 'No se pudo guardar el estado del envío.',
+        );
+      }
     }
 
     final photoPath = row.draft.photoPath;
     if (photoPath == null || photoPath.isEmpty) {
-      await repository.updateDelivery(
-        row.id,
+      final saved = await _saveDelivery(
+        row,
         ownerKey: ownerKey,
         syncStatus: 'confirmed',
         backendConsultationId: backendId,
       );
+      if (!saved) {
+        return ConsultationSyncAttempt(
+          localId: row.id,
+          syncStatus: 'pending',
+          backendConsultationId: backendId,
+          errorMessage: 'No se pudo guardar el estado del envío.',
+        );
+      }
       return ConsultationSyncAttempt(
         localId: row.id,
         syncStatus: 'confirmed',
@@ -98,6 +114,14 @@ class ConsultationSyncService {
 
     final photoProblem = await _photoProblem(photoPath);
     if (photoProblem != null) {
+      await _rememberMessage(
+        row,
+        operation: 'post_photo',
+        type: photoProblem == 'La foto ya no está en el dispositivo.'
+            ? 'missing_photo'
+            : 'invalid_response',
+        message: photoProblem,
+      );
       return ConsultationSyncAttempt(
         localId: row.id,
         syncStatus: 'pending',
@@ -112,6 +136,7 @@ class ConsultationSyncService {
       row.idempotencyKey,
     );
     if (!uploaded.accepted) {
+      await _remember(row, 'post_photo', uploaded);
       return ConsultationSyncAttempt(
         localId: row.id,
         syncStatus: 'pending',
@@ -120,12 +145,20 @@ class ConsultationSyncService {
       );
     }
 
-    await repository.updateDelivery(
-      row.id,
+    final saved = await _saveDelivery(
+      row,
       ownerKey: ownerKey,
       syncStatus: 'confirmed',
       backendConsultationId: backendId,
     );
+    if (!saved) {
+      return ConsultationSyncAttempt(
+        localId: row.id,
+        syncStatus: 'pending',
+        backendConsultationId: backendId,
+        errorMessage: 'No se pudo guardar el estado del envío.',
+      );
+    }
     return ConsultationSyncAttempt(
       localId: row.id,
       syncStatus: 'confirmed',
@@ -152,7 +185,9 @@ class ConsultationSyncService {
           response.statusCode == HttpStatus.created) {
         final backendId = _readBackendId(response.body);
         if (backendId == null) {
-          return const _HttpResult(
+          return _failed(
+            'invalid_response',
+            httpStatus: response.statusCode,
             errorMessage:
                 'El servidor no devolvió el identificador de la consulta.',
           );
@@ -161,17 +196,24 @@ class ConsultationSyncService {
       }
       if (response.statusCode == HttpStatus.badRequest ||
           response.statusCode == HttpStatus.conflict) {
-        return _HttpResult(errorMessage: _rejection(response));
+        return _failed(
+          _httpType(response.statusCode),
+          httpStatus: response.statusCode,
+          errorMessage: _rejection(response),
+        );
       }
-      return const _HttpResult();
+      return _failed(
+        _httpType(response.statusCode),
+        httpStatus: response.statusCode,
+      );
     } on TimeoutException {
-      return const _HttpResult();
+      return _failed('timeout');
     } on SocketException {
-      return const _HttpResult();
+      return _failed('network');
     } on http.ClientException {
-      return const _HttpResult();
+      return _failed('network');
     } catch (_) {
-      return const _HttpResult();
+      return _failed('invalid_response');
     }
   }
 
@@ -182,7 +224,8 @@ class ConsultationSyncService {
   ) async {
     final contentType = _imageContentType(photoPath);
     if (contentType == null) {
-      return const _HttpResult(
+      return _failed(
+        'invalid_response',
         errorMessage: 'La foto debe ser JPEG, PNG o WEBP.',
       );
     }
@@ -210,26 +253,127 @@ class ConsultationSyncService {
         return const _HttpResult(accepted: true);
       }
       if (response.statusCode == HttpStatus.notFound) {
-        return const _HttpResult(
+        return _failed(
+          'invalid_response',
+          httpStatus: response.statusCode,
           errorMessage:
               'La foto no se adjuntó. Se reintentará sobre la misma consulta.',
         );
       }
       if (response.statusCode == HttpStatus.badRequest ||
           response.statusCode == HttpStatus.conflict) {
-        return _HttpResult(errorMessage: _rejection(response));
+        return _failed(
+          _httpType(response.statusCode),
+          httpStatus: response.statusCode,
+          errorMessage: _rejection(response),
+        );
       }
-      return const _HttpResult();
+      return _failed(
+        _httpType(response.statusCode),
+        httpStatus: response.statusCode,
+      );
     } on TimeoutException {
-      return const _HttpResult();
+      return _failed('timeout');
     } on SocketException {
-      return const _HttpResult();
+      return _failed('network');
     } on http.ClientException {
-      return const _HttpResult();
+      return _failed('network');
     } catch (_) {
-      return const _HttpResult();
+      return _failed('invalid_response');
     }
   }
+
+  Future<bool> _saveDelivery(
+    SavedConsultation row, {
+    required String ownerKey,
+    required String syncStatus,
+    String? backendConsultationId,
+  }) async {
+    try {
+      await repository.updateDelivery(
+        row.id,
+        ownerKey: ownerKey,
+        syncStatus: syncStatus,
+        backendConsultationId: backendConsultationId,
+      );
+      return true;
+    } catch (_) {
+      await _rememberMessage(
+        row,
+        operation: 'update_delivery',
+        type: 'invalid_response',
+        message: 'No se pudo guardar el estado del envío.',
+      );
+      return false;
+    }
+  }
+
+  Future<void> _remember(
+    SavedConsultation row,
+    String operation,
+    _HttpResult result,
+  ) async {
+    if (result.failureType == null) return;
+    await _rememberMessage(
+      row,
+      operation: operation,
+      type: result.failureType!,
+      httpStatus: result.httpStatus,
+      message:
+          result.failureMessage ??
+          _defaultFailureMessage(result.failureType!, result.httpStatus),
+    );
+  }
+
+  Future<void> _rememberMessage(
+    SavedConsultation row, {
+    required String operation,
+    required String type,
+    int? httpStatus,
+    required String message,
+  }) async {
+    try {
+      await repository.recordSyncFailure(
+        operation: operation,
+        type: type,
+        httpStatus: httpStatus,
+        localConsultationId: row.id,
+        mobileConsultationId: row.mobileConsultationId,
+        message: message,
+      );
+    } catch (_) {
+      // El envío sigue pendiente aunque el registro del fallo no se guarde.
+    }
+  }
+
+  _HttpResult _failed(String type, {int? httpStatus, String? errorMessage}) {
+    final keepsScreenText =
+        type == 'timeout' || type == 'network' || type == 'http_5xx';
+    return _HttpResult(
+      errorMessage: keepsScreenText ? null : errorMessage,
+      failureType: type,
+      httpStatus: httpStatus,
+      failureMessage: _defaultFailureMessage(type, httpStatus),
+    );
+  }
+
+  String _httpType(int status) {
+    if (status == HttpStatus.badRequest) return 'http_400';
+    if (status == HttpStatus.conflict) return 'http_409';
+    if (status >= 500 && status <= 599) return 'http_5xx';
+    return 'invalid_response';
+  }
+
+  String _defaultFailureMessage(String type, int? status) => switch (type) {
+    'timeout' => 'Se agotó el tiempo de envío.',
+    'network' => 'No hubo conexión con el servidor.',
+    'http_400' || 'http_409' =>
+      'El servidor rechazó el envío${status == null ? '' : ' ($status)'}.',
+    'http_5xx' =>
+      'El servidor no completó el envío${status == null ? '' : ' ($status)'}.',
+    'missing_photo' => 'La foto ya no está en el dispositivo.',
+    _ => 'La respuesta del servidor no se pudo usar.',
+  };
 
   Future<String?> _photoProblem(String photoPath) async {
     if (_imageContentType(photoPath) == null) {
@@ -333,9 +477,19 @@ class ConsultationSyncService {
 }
 
 class _HttpResult {
-  const _HttpResult({this.backendId, this.errorMessage, this.accepted = false});
+  const _HttpResult({
+    this.backendId,
+    this.errorMessage,
+    this.accepted = false,
+    this.failureType,
+    this.httpStatus,
+    this.failureMessage,
+  });
 
   final String? backendId;
   final String? errorMessage;
   final bool accepted;
+  final String? failureType;
+  final int? httpStatus;
+  final String? failureMessage;
 }

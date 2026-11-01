@@ -294,7 +294,7 @@ class LocalConsultationRepository {
             'lifeline_consultations.db',
           ),
       options: OpenDatabaseOptions(
-        version: 5,
+        version: 6,
         onCreate: (db, _) async {
           await db.execute('''
             CREATE TABLE consultations (
@@ -317,6 +317,7 @@ class LocalConsultationRepository {
               sync_status TEXT NOT NULL
             )
           ''');
+          await _createSyncErrors(db);
         },
         onUpgrade: (db, oldVersion, _) async {
           if (oldVersion < 2) {
@@ -378,6 +379,7 @@ class LocalConsultationRepository {
               );
             }
           }
+          if (oldVersion < 6) await _createSyncErrors(db);
         },
       ),
     );
@@ -548,8 +550,131 @@ class LocalConsultationRepository {
   String _mediaKey(String value) =>
       path.normalize(File(value).absolute.path).toLowerCase();
 
+  Future<void> recordSyncFailure({
+    required String operation,
+    required String type,
+    int? httpStatus,
+    required int localConsultationId,
+    required String mobileConsultationId,
+    required String message,
+  }) async {
+    final db = await _open();
+    await db.insert('sync_errors', {
+      'operation': operation,
+      'error_type': type,
+      'http_status': httpStatus,
+      'local_consultation_id': localConsultationId,
+      'mobile_consultation_id': mobileConsultationId,
+      'occurred_at': DateTime.now().toUtc().toIso8601String(),
+      'message': _shortFailureMessage(message),
+    });
+  }
+
+  Future<List<SyncFailure>> syncFailures({required String ownerKey}) async {
+    final db = await _open();
+    final rows = await db.rawQuery(
+      '''
+      SELECT e.operation, e.error_type, e.http_status, e.local_consultation_id,
+             e.mobile_consultation_id, e.occurred_at, e.message
+      FROM sync_errors e
+      INNER JOIN consultations c ON c.id = e.local_consultation_id
+      WHERE c.owner_key = ?
+      ORDER BY e.id
+      ''',
+      [ownerKey],
+    );
+    return rows.map(SyncFailure.fromRow).toList(growable: false);
+  }
+
+  Future<List<SyncFailureCount>> syncFailureCounts({
+    required String ownerKey,
+  }) async {
+    final db = await _open();
+    final rows = await db.rawQuery(
+      '''
+      SELECT e.error_type, e.operation, COUNT(*) AS total
+      FROM sync_errors e
+      INNER JOIN consultations c ON c.id = e.local_consultation_id
+      WHERE c.owner_key = ?
+      GROUP BY e.error_type, e.operation
+      ORDER BY e.error_type, e.operation
+      ''',
+      [ownerKey],
+    );
+    return rows.map(SyncFailureCount.fromRow).toList(growable: false);
+  }
+
   Future<void> close() async {
     await _database?.close();
     _database = null;
   }
+}
+
+Future<void> _createSyncErrors(Database db) async {
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS sync_errors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      operation TEXT NOT NULL,
+      error_type TEXT NOT NULL,
+      http_status INTEGER,
+      local_consultation_id INTEGER NOT NULL,
+      mobile_consultation_id TEXT NOT NULL,
+      occurred_at TEXT NOT NULL,
+      message TEXT NOT NULL
+    )
+  ''');
+}
+
+String _shortFailureMessage(String message) {
+  final compact = message.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (compact.length <= 120) return compact;
+  return compact.substring(0, 120);
+}
+
+class SyncFailure {
+  const SyncFailure({
+    required this.operation,
+    required this.type,
+    required this.httpStatus,
+    required this.localConsultationId,
+    required this.mobileConsultationId,
+    required this.occurredAt,
+    required this.message,
+  });
+
+  final String operation;
+  final String type;
+  final int? httpStatus;
+  final int localConsultationId;
+  final String mobileConsultationId;
+  final DateTime occurredAt;
+  final String message;
+
+  static SyncFailure fromRow(Map<String, Object?> row) => SyncFailure(
+    operation: row['operation'] as String,
+    type: row['error_type'] as String,
+    httpStatus: row['http_status'] as int?,
+    localConsultationId: row['local_consultation_id'] as int,
+    mobileConsultationId: row['mobile_consultation_id'] as String,
+    occurredAt: DateTime.parse(row['occurred_at'] as String),
+    message: row['message'] as String,
+  );
+}
+
+class SyncFailureCount {
+  const SyncFailureCount({
+    required this.type,
+    required this.operation,
+    required this.count,
+  });
+
+  final String type;
+  final String operation;
+  final int count;
+
+  static SyncFailureCount fromRow(Map<String, Object?> row) => SyncFailureCount(
+    type: row['error_type'] as String,
+    operation: row['operation'] as String,
+    count: (row['total'] as num).toInt(),
+  );
 }

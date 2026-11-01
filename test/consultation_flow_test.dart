@@ -46,6 +46,11 @@ class FakeHistoryRepository extends LocalConsultationRepository {
     required String ownerKey,
     LocalMedicalKnowledgeRepository? knowledge,
   }) async => items;
+
+  @override
+  Future<List<SyncFailureCount>> syncFailureCounts({
+    required String ownerKey,
+  }) async => const [];
 }
 
 class _GuestAuthRepository implements AuthRepository {
