@@ -4,9 +4,14 @@ import '../local/secure_session_storage.dart';
 import '../remote/auth_api_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl({required this.api, required this.sessions});
+  AuthRepositoryImpl({
+    required this.api,
+    required this.sessions,
+    this.beforeRemoteSignOut,
+  });
   final AuthApiService api;
-  final SecureSessionStorage sessions;
+  final SessionStore sessions;
+  final Future<void> Function(String accessToken)? beforeRemoteSignOut;
 
   @override
   Future<AuthenticatedUser> signIn(String email, String password) async {
@@ -40,6 +45,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() async {
     final user = await sessions.read();
+    final accessToken = user?.token ?? '';
+    if (accessToken.isNotEmpty) {
+      try {
+        await beforeRemoteSignOut?.call(accessToken);
+      } catch (_) {}
+    }
     await sessions.clear();
     if (user != null) await api.signOut(user.token);
   }

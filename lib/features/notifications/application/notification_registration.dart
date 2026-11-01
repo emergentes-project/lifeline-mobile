@@ -10,6 +10,7 @@ import '../../../core/config/api_config.dart';
 abstract class SentNotificationTokens {
   Future<bool> matches(String scope, String token);
   Future<void> save(String scope, String token);
+  Future<void> forget(String token);
 }
 
 class MemorySentNotificationTokens implements SentNotificationTokens {
@@ -22,6 +23,11 @@ class MemorySentNotificationTokens implements SentNotificationTokens {
   @override
   Future<void> save(String scope, String token) async {
     _values[scope] = token;
+  }
+
+  @override
+  Future<void> forget(String token) async {
+    _values.removeWhere((_, value) => value == token);
   }
 }
 
@@ -49,6 +55,25 @@ class SecureSentNotificationTokens implements SentNotificationTokens {
     _cache[scope] = token;
     try {
       await storage.write(key: _key(scope), value: token);
+    } catch (_) {}
+  }
+
+  @override
+  Future<void> forget(String token) async {
+    final scopes = _cache.entries
+        .where((entry) => entry.value == token)
+        .map((entry) => entry.key)
+        .toList(growable: false);
+    _cache.removeWhere((_, value) => value == token);
+    try {
+      for (final scope in scopes) {
+        await storage.delete(key: _key(scope));
+      }
+      final stored = await storage.readAll();
+      for (final entry in stored.entries) {
+        if (!entry.key.startsWith('lifeline_notification_')) continue;
+        if (entry.value == token) await storage.delete(key: entry.key);
+      }
     } catch (_) {}
   }
 
@@ -100,6 +125,28 @@ class NotificationRegistration {
     );
   }
 
+  Future<void> revoke({
+    required String deviceToken,
+    required String accessToken,
+  }) async {
+    if (deviceToken.isEmpty || accessToken.isEmpty) return;
+    try {
+      await client
+          .delete(
+            _uri('/api/v1/notification-tokens'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $accessToken',
+            },
+            body: jsonEncode({'token': deviceToken}),
+          )
+          .timeout(timeout);
+    } catch (_) {
+      // El cierre local sigue aunque el DELETE no llegue.
+    }
+    await sent.forget(deviceToken);
+  }
+
   Future<bool> _post({
     required String scope,
     required String deviceToken,
@@ -123,10 +170,11 @@ class NotificationRegistration {
             body: jsonEncode(body),
           )
           .timeout(timeout);
-      if (response.statusCode != HttpStatus.ok &&
-          response.statusCode != HttpStatus.created) {
-        return false;
-      }
+      final accepted =
+          response.statusCode == HttpStatus.ok ||
+          response.statusCode == HttpStatus.created ||
+          response.statusCode == HttpStatus.noContent;
+      if (!accepted) return false;
       await sent.save(scope, deviceToken);
       return true;
     } on TimeoutException {

@@ -6,6 +6,7 @@ import '../data/ai/consultation_guidance_service.dart';
 import '../data/ai/gemma4_on_device_inference.dart';
 import '../data/local/local_consultation_repository.dart';
 import '../domain/models/consultation_draft.dart';
+import '../domain/models/saved_consultation.dart';
 import '../domain/models/consultation_guidance.dart';
 import '../domain/models/patient_draft.dart';
 import '../data/device/device_location_service.dart';
@@ -14,6 +15,7 @@ import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/blocs/auth_state.dart';
 import '../../cases/data/case_api_service.dart';
 import '../../cases/presentation/cases_page.dart' show caseStatusLabel;
+import '../../notifications/application/delivery_confirmation_notices.dart';
 import '../../notifications/application/publish_notification_token.dart';
 import '../application/consultation_owner.dart';
 
@@ -369,6 +371,17 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   ) async {
     final auth = context.read<AuthCubit>().state;
     final sync = _provided<ConsultationSyncService>(context);
+    SavedConsultation? beforeRow;
+    var knowBefore = false;
+    if (consultationId != null) {
+      try {
+        beforeRow = await consultations.get(
+          consultationId!,
+          ownerKey: ownerKey,
+        );
+        knowBefore = true;
+      } catch (_) {}
+    }
     ConsultationSyncAttempt? attempt;
     if (sync != null && consultationId != null) {
       try {
@@ -405,6 +418,11 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
       remoteCaseLabel = label;
     });
     if (!mounted || row == null) return;
+    final notices = _provided<DeliveryConfirmationNotices>(context);
+    if (knowBefore && notices != null) {
+      await notices.announce([?beforeRow], [row]);
+    }
+    if (!mounted) return;
     await publishNotificationToken(context, auth: auth, consultations: [row]);
   }
 

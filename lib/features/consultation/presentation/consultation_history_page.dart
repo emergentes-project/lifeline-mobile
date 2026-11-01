@@ -10,6 +10,7 @@ import '../../auth/presentation/blocs/auth_cubit.dart';
 import '../../auth/presentation/blocs/auth_state.dart';
 import '../application/consultation_owner.dart';
 import '../application/consultation_sync_service.dart';
+import '../../notifications/application/delivery_confirmation_notices.dart';
 import '../../notifications/application/publish_notification_token.dart';
 import '../../../core/presentation/app_message_view.dart';
 
@@ -34,8 +35,17 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
   Future<List<SavedConsultation>> load() async {
     final auth = context.read<AuthCubit>().state;
     final ownerKey = consultationOwnerKey(auth);
+    final repository = context.read<LocalConsultationRepository>();
+    final knowledge = context.read<LocalMedicalKnowledgeRepository>();
+    final notices = _provided<DeliveryConfirmationNotices>(context);
     final sync = _provided<ConsultationSyncService>(context);
+    List<SavedConsultation>? before;
     if (sync != null) {
+      try {
+        before = await repository.list(ownerKey: ownerKey);
+      } catch (_) {
+        before = null;
+      }
       try {
         final outcomes = await sync.syncPending(
           ownerKey: ownerKey,
@@ -55,10 +65,13 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
       }
     }
     if (!mounted) return const [];
-    final items = await context.read<LocalConsultationRepository>().list(
+    final items = await repository.list(
       ownerKey: ownerKey,
-      knowledge: context.read<LocalMedicalKnowledgeRepository>(),
+      knowledge: knowledge,
     );
+    if (before != null && notices != null) {
+      await notices.announce(before, items);
+    }
     if (!mounted) return items;
     await publishNotificationToken(context, auth: auth, consultations: items);
     return items;

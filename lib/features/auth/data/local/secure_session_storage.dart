@@ -5,13 +5,22 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/models/authenticated_user.dart';
 
-class SecureSessionStorage {
+abstract class SessionStore {
+  Future<void> save(AuthenticatedUser user, String password);
+  Future<bool> verify(String password);
+  Future<AuthenticatedUser?> read();
+  Future<void> updateUser(AuthenticatedUser user);
+  Future<void> clear();
+}
+
+class SecureSessionStorage implements SessionStore {
   SecureSessionStorage(this.storage);
   final FlutterSecureStorage storage;
   static const _session = 'lifeline_session';
   static const _salt = 'lifeline_unlock_salt';
   static const _verifier = 'lifeline_unlock_verifier';
 
+  @override
   Future<void> save(AuthenticatedUser user, String password) async {
     final salt = List<int>.generate(32, (_) => Random.secure().nextInt(256));
     await storage.write(key: _salt, value: base64Encode(salt));
@@ -24,6 +33,7 @@ class SecureSessionStorage {
     await storage.write(key: _session, value: jsonEncode(user.toJson()));
   }
 
+  @override
   Future<bool> verify(String password) async {
     final salt = await storage.read(key: _salt);
     final expected = await storage.read(key: _verifier);
@@ -41,6 +51,7 @@ class SecureSessionStorage {
     return difference == 0;
   }
 
+  @override
   Future<AuthenticatedUser?> read() async {
     final raw = await storage.read(key: _session);
     if (raw == null) return null;
@@ -54,9 +65,11 @@ class SecureSessionStorage {
     }
   }
 
+  @override
   Future<void> updateUser(AuthenticatedUser user) =>
       storage.write(key: _session, value: jsonEncode(user.toJson()));
 
+  @override
   Future<void> clear() async {
     await storage.delete(key: _session);
     await storage.delete(key: _salt);
