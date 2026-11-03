@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/presentation/system_status_bar.dart';
+import '../../../core/theme/app_theme.dart';
 import 'blocs/auth_cubit.dart';
 import 'blocs/auth_state.dart';
+import 'sign_in_page.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key, required this.medical});
@@ -17,6 +20,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   late bool medical;
   bool showPassword = false;
   DateTime? birthDate;
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +29,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   TextEditingController field(String name) =>
       fields.putIfAbsent(name, TextEditingController.new);
+
   @override
   void dispose() {
     for (final controller in fields.values) {
@@ -36,11 +41,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Widget input(
     String key,
     String label, {
+    String? hint,
     bool required = true,
     bool secret = false,
     TextInputType? keyboard,
   }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.only(bottom: 14),
     child: TextFormField(
       controller: field(key),
       obscureText: secret && !showPassword,
@@ -52,6 +58,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
           : null,
       decoration: InputDecoration(
         labelText: label,
+        hintText: hint,
         suffixIcon: secret
             ? IconButton(
                 tooltip: showPassword
@@ -60,6 +67,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 onPressed: () => setState(() => showPassword = !showPassword),
                 icon: Icon(
                   showPassword ? Icons.visibility_off : Icons.visibility,
+                  color: AppTheme.slateMuted,
                 ),
               )
             : null,
@@ -136,7 +144,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Crear cuenta')),
+    backgroundColor: AppTheme.background,
+    appBar: AppBar(
+      title: const Text('Crear cuenta'),
+      bottom: const SystemStatusBar(mode: SystemStatusMode.offline),
+    ),
     body: BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated &&
@@ -152,101 +164,244 @@ class _RegistrationPageState extends State<RegistrationPage> {
       child: Form(
         key: form,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('Ciudadano')),
-                ButtonSegment(value: true, label: Text('Personal médico')),
-              ],
-              selected: {medical},
-              onSelectionChanged:
-                  context.watch<AuthCubit>().state.status == AuthStatus.busy
-                  ? null
-                  : (selection) => setState(() => medical = selection.first),
+            // Role Selector matching Wireframe A-02 and A-03
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceMuted,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.border, width: 1),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: context.watch<AuthCubit>().state.status == AuthStatus.busy
+                          ? null
+                          : () => setState(() => medical = false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: !medical ? const Color(0xFF475569) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Ciudadano',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontHeading,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: !medical ? Colors.white : AppTheme.slateMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: context.watch<AuthCubit>().state.status == AuthStatus.busy
+                          ? null
+                          : () => setState(() => medical = true),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: medical ? const Color(0xFF475569) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Personal médico',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontHeading,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: medical ? Colors.white : AppTheme.slateMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
-            input('firstName', 'Nombres'),
-            input('lastName', 'Apellidos'),
+
+            // Nombres y Apellidos en Row (Wireframe A-02/A-03)
+            Row(
+              children: [
+                Expanded(
+                  child: input(
+                    'firstName',
+                    'Nombres',
+                    hint: medical ? 'Ej. Luis' : 'Ej. Adriana',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: input(
+                    'lastName',
+                    'Apellidos',
+                    hint: medical ? 'Ej. Mendoza' : 'Ej. Rojas',
+                  ),
+                ),
+              ],
+            ),
+
             input(
               'email',
               'Correo electrónico',
+              hint: 'nombre@correo.com',
               keyboard: TextInputType.emailAddress,
             ),
             input(
               'phone',
-              'Teléfono',
+              'Teléfono (opcional)',
+              hint: '999 999 999',
               required: false,
               keyboard: TextInputType.phone,
             ),
+
             if (medical) ...[
-              DropdownButtonFormField<String>(
-                initialValue: category,
-                decoration: const InputDecoration(
-                  labelText: 'Categoría profesional',
-                ),
-                items:
-                    const [
-                          'DOCTOR',
-                          'NURSE',
-                          'PARAMEDIC',
-                          'FIREFIGHTER',
-                          'MEDICAL_INTERN',
-                          'MEDICAL_RESIDENT',
-                        ]
-                        .map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: DropdownButtonFormField<String>(
+                  initialValue: category,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoría profesional',
+                  ),
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: const [
+                    'DOCTOR',
+                    'NURSE',
+                    'PARAMEDIC',
+                    'FIREFIGHTER',
+                    'MEDICAL_INTERN',
+                    'MEDICAL_RESIDENT',
+                  ]
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(
+                            switch (value) {
+                              'DOCTOR' => 'Médico / Doctor',
+                              'NURSE' => 'Enfermería',
+                              'PARAMEDIC' => 'Paramédico',
+                              'FIREFIGHTER' => 'Bombero rescatista',
+                              'MEDICAL_INTERN' => 'Interno de medicina',
+                              'MEDICAL_RESIDENT' => 'Residente médico',
+                              _ => value,
+                            },
                           ),
-                        )
-                        .toList(),
-                onChanged: (value) =>
-                    setState(() => category = value ?? category),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => category = value ?? category),
+                ),
               ),
-              const SizedBox(height: 12),
               input(
                 'professionalLicenseNumber',
                 'N.º de identificación profesional',
+                hint: 'Ej. 000000',
               ),
-              input('specialty', 'Especialidad', required: false),
-            ] else ...[
-              input('city', 'Ciudad'),
-              input('district', 'Distrito'),
-              input('address', 'Dirección'),
-              OutlinedButton(
-                onPressed: () async {
-                  final selected = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime(2000),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (selected != null) setState(() => birthDate = selected);
-                },
+              input(
+                'specialty',
+                'Especialidad (opcional)',
+                hint: 'Ej. Medicina de emergencia',
+                required: false,
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 14),
                 child: Text(
-                  birthDate == null
-                      ? 'Fecha de nacimiento'
-                      : '${birthDate!.day}/${birthDate!.month}/${birthDate!.year}',
+                  'Validaremos tu identificación profesional antes de habilitar el rol.',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    fontSize: 12,
+                    color: AppTheme.slateMuted,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
+            ] else ...[
+              // Ciudad y Distrito en Row (Wireframe A-02)
+              Row(
+                children: [
+                  Expanded(
+                    child: input('city', 'Ciudad', hint: 'Ej. Lima'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: input('district', 'Distrito', hint: 'Ej. Miraflores'),
+                  ),
+                ],
+              ),
+              input('address', 'Dirección', hint: 'Av. / calle y número'),
+              // Fecha de nacimiento estilizada con ícono de calendario
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: InkWell(
+                  onTap: () async {
+                    final selected = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime(2000),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (selected != null) setState(() => birthDate = selected);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Fecha de nacimiento',
+                      suffixIcon: Icon(Icons.calendar_today_outlined, size: 20),
+                    ),
+                    child: Text(
+                      birthDate == null
+                          ? 'DD / MM / AAAA'
+                          : '${birthDate!.day.toString().padLeft(2, '0')} / ${birthDate!.month.toString().padLeft(2, '0')} / ${birthDate!.year}',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontBody,
+                        color: birthDate == null ? const Color(0xFF94A3B8) : AppTheme.slate,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               input(
                 'emergencyContactName',
-                'Contacto de emergencia',
+                'Contacto de emergencia (opcional)',
+                hint: 'Ej. María Rojas',
                 required: false,
               ),
               input(
                 'emergencyContactPhone',
-                'Teléfono del contacto',
+                'Teléfono del contacto (opcional)',
+                hint: '999 888 777',
                 required: false,
                 keyboard: TextInputType.phone,
               ),
             ],
-            input('password', 'Contraseña', secret: true),
-            const SizedBox(height: 12),
+
+            input(
+              'password',
+              'Contraseña',
+              hint: 'Mínimo 8 caracteres',
+              secret: true,
+            ),
+            const SizedBox(height: 8),
+
+            // Submit Button
             BlocBuilder<AuthCubit, AuthState>(
               builder: (context, state) => FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF64748B),
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: state.status == AuthStatus.busy ? null : submit,
                 child: Text(
                   state.status == AuthStatus.busy
@@ -257,6 +412,30 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // "¿Ya tienes cuenta? Inicia sesión"
+            TextButton(
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SignInPage()),
+                  );
+                }
+              },
+              child: const Text(
+                '¿Ya tienes cuenta? Inicia sesión',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontBody,
+                  color: AppTheme.slateMuted,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

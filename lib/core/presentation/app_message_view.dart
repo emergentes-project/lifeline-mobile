@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class AppMessageView extends StatelessWidget {
   const AppMessageView({
@@ -21,30 +22,56 @@ class AppMessageView extends StatelessWidget {
     liveRegion: true,
     child: Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 48,
-              color: Theme.of(context).colorScheme.primary,
-              semanticLabel: title,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceMuted,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 44,
+                color: AppTheme.teal,
+                semanticLabel: title,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.slate,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontBody,
+                fontSize: 14,
+                color: AppTheme.slateMuted,
+                height: 1.4,
+              ),
+            ),
             if (onAction != null && actionLabel != null) ...[
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.refresh),
-                label: Text(actionLabel!),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF64748B),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: onAction,
+                  icon: const Icon(Icons.refresh, size: 20),
+                  label: Text(actionLabel!),
+                ),
               ),
             ],
           ],

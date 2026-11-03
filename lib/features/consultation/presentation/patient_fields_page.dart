@@ -1,6 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/presentation/system_status_bar.dart';
+import '../../../core/presentation/wireframe_components.dart';
+import '../../../core/theme/app_theme.dart';
 import '../application/consultation_sync_service.dart';
 import '../data/ai/consultation_guidance_service.dart';
 import '../data/ai/gemma4_on_device_inference.dart';
@@ -96,7 +98,11 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Datos del paciente')),
+    backgroundColor: AppTheme.background,
+    appBar: AppBar(
+      title: const Text('Datos del paciente'),
+      bottom: const SystemStatusBar(mode: SystemStatusMode.offline),
+    ),
     body: SafeArea(
       child: Form(
         key: form,
@@ -104,40 +110,88 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 children: [
+                  // Subtitle (Wireframe C-02)
                   const Text(
                     'Estos datos ayudan al personal médico a atender el caso.',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontBody,
+                      fontSize: 14,
+                      color: AppTheme.slateMuted,
+                      height: 1.4,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
+
+                  // Nombre del paciente
                   TextFormField(
                     controller: name,
                     decoration: const InputDecoration(
                       labelText: 'Nombre del paciente',
+                      hintText: 'Ej. Juan Pérez',
                     ),
                     validator: (value) => value == null || value.trim().isEmpty
                         ? 'Ingresa el nombre'
                         : null,
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: age,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Edad (años)'),
-                    validator: (value) {
-                      final number = int.tryParse(value ?? '');
-                      return number == null || number < 0 || number > 120
-                          ? 'Ingresa una edad válida'
-                          : null;
-                    },
+                  const SizedBox(height: 14),
+
+                  // Row: Edad (años) y Provincia (Wireframe C-02)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: age,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Edad (años)',
+                            hintText: 'Ej. 34',
+                          ),
+                          validator: (value) {
+                            final number = int.tryParse(value ?? '');
+                            return number == null || number < 0 || number > 120
+                                ? 'Edad inválida'
+                                : null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: province,
+                          decoration: const InputDecoration(
+                            labelText: 'Provincia',
+                            hintText: 'Ej. Lima',
+                            suffixIcon: Icon(Icons.keyboard_arrow_down, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
+
+                  // Referencia de ubicación
+                  TextFormField(
+                    controller: location,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Referencia de ubicación',
+                      hintText: 'Ej. Frente al parque, 2.° piso',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Teléfono de quien solicita ayuda
                   TextFormField(
                     controller: requesterPhone,
                     keyboardType: TextInputType.phone,
                     maxLength: 30,
                     decoration: const InputDecoration(
                       labelText: 'Teléfono de quien solicita ayuda',
+                      hintText: '999 999 999',
                       helperText:
                           'El personal médico podrá verlo para contactarte.',
                     ),
@@ -153,63 +207,47 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: province,
-                    decoration: const InputDecoration(
-                      labelText: 'Provincia (opcional)',
+                  const SizedBox(height: 8),
+
+                  // Ubicación del paciente (Map preview - Wireframe C-02)
+                  const Text(
+                    'Ubicación del paciente',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontHeading,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppTheme.slate,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: location,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Referencia de ubicación (opcional)',
-                    ),
+                  const SizedBox(height: 8),
+                  MapPreviewCard(
+                    height: 130,
+                    coordinatesText: locating
+                        ? 'Obteniendo coordenadas GPS...'
+                        : coordinates != null
+                        ? '${coordinates!.latitude.toStringAsFixed(6)}, ${coordinates!.longitude.toStringAsFixed(6)} · precisión ${coordinates!.accuracyMeters.round()}m'
+                        : locationError ?? 'Coordenadas capturadas por GPS',
+                    onTap: captureLocation,
                   ),
                   const SizedBox(height: 16),
-                  Card(
-                    child: ListTile(
-                      leading: Icon(
-                        coordinates == null
-                            ? Icons.location_searching
-                            : Icons.location_on_outlined,
-                      ),
-                      title: Text(
-                        locating
-                            ? 'Obteniendo ubicación...'
-                            : coordinates == null
-                            ? 'Ubicación no disponible'
-                            : 'Ubicación registrada',
-                      ),
-                      subtitle: Text(
-                        coordinates == null
-                            ? (locationError ??
-                                  'Puedes continuar con una referencia escrita.')
-                            : '${coordinates!.latitude.toStringAsFixed(6)}, ${coordinates!.longitude.toStringAsFixed(6)} · precisión aproximada ${coordinates!.accuracyMeters.round()} m',
-                      ),
-                      trailing: locating
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : IconButton(
-                              icon: const Icon(Icons.refresh),
-                              tooltip: 'Reintentar ubicación',
-                              onPressed: captureLocation,
-                            ),
-                    ),
-                  ),
                 ],
               ),
             ),
+
+            // Button: Guardar y continuar (Wireframe C-02)
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: FilledButton(
-                onPressed: preview,
-                child: const Text('Guardar consulta'),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: SizedBox(
+                height: 52,
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF64748B),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: preview,
+                  child: const Text('Guardar y continuar'),
+                ),
               ),
             ),
           ],
@@ -315,7 +353,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   }
 
   Future<void> continueToPatient() async {
-    if (guidance?.isReady != true || busy || !helpRequested) return;
+    if (busy) return;
     final selected = await Navigator.push<PatientDraft>(
       context,
       MaterialPageRoute(
@@ -327,6 +365,88 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     if (!mounted || selected == null) return;
     setState(() => patient = selected);
     await saveConsultation();
+  }
+
+  Future<void> confirmProfessionalHelpModal() async {
+    // Show Wireframe C-06 Modal Bottom Sheet
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '¿Solicitar apoyo profesional?',
+              style: Theme.of(sheetContext).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppTheme.slate,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Tu consulta, los datos del paciente y la ubicación se enviarán al personal médico apenas haya conexión.',
+              style: TextStyle(
+                fontFamily: AppTheme.fontBody,
+                fontSize: 14,
+                color: AppTheme.slateMuted,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            // Primary Red CTA (Wireframe C-06)
+            SizedBox(
+              height: 50,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.emergency,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(sheetContext, true),
+                child: const Text('Sí, solicitar apoyo'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Cancel Button
+            SizedBox(
+              height: 50,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppTheme.border, width: 1.4),
+                  foregroundColor: AppTheme.slate,
+                ),
+                onPressed: () => Navigator.pop(sheetContext, false),
+                child: const Text('Cancelar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => helpRequested = true);
+      if (patient == null) {
+        await continueToPatient();
+      } else {
+        await saveConsultation();
+      }
+    }
   }
 
   Future<void> saveConsultation() async {
@@ -469,216 +589,520 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     return 'Envío pendiente. Se reintentará con la misma consulta.';
   }
 
-  Widget section(String title, List<String> items, {String? lead}) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 20),
-      Text(title, style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 8),
-      if (lead != null)
-        Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(lead)),
-      for (var index = 0; index < items.length; index++)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: SelectableText('${index + 1}. ${items[index]}'),
-        ),
-    ],
-  );
-
   String priorityLabel(PreliminaryPriority? priority) => switch (priority) {
-    PreliminaryPriority.high => 'Alta: atención inmediata',
-    PreliminaryPriority.medium => 'Media: valoración pronta',
-    PreliminaryPriority.low => 'Baja: puede esperar',
-    null => 'Pendiente por información insuficiente',
-  };
-
-  String helpLabel(bool? recommended) => switch (recommended) {
-    true => 'Sí, solicita ayuda profesional.',
-    false =>
-      'No parece necesaria de inmediato con los datos actuales. Vigila las condiciones indicadas abajo.',
-    null =>
-      'No se puede determinar con los datos disponibles. Busca valoración profesional si hay dudas o empeora.',
+    PreliminaryPriority.high => 'Alta',
+    PreliminaryPriority.medium => 'Media',
+    PreliminaryPriority.low => 'Baja',
+    null => 'Pendiente',
   };
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(saved ? 'Revisar consulta' : 'Orientación de la consulta'),
-    ),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        if (patient case final currentPatient?) ...[
-          Text(
-            currentPatient.name,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          Text(
-            '${currentPatient.ageYears} años${currentPatient.province == null ? '' : ' · ${currentPatient.province}'}',
-          ),
-          if (currentPatient.locationDescription != null)
-            Text(currentPatient.locationDescription!),
-          if (currentPatient.requesterPhone != null)
-            ListTile(
-              leading: const Icon(Icons.phone_outlined),
-              title: const Text('Teléfono de quien solicita ayuda'),
-              subtitle: Text(currentPatient.requesterPhone!),
-            ),
-          if (currentPatient.latitude != null &&
-              currentPatient.longitude != null)
-            ListTile(
-              leading: const Icon(Icons.location_on_outlined),
-              title: const Text('Coordenadas GPS'),
-              subtitle: Text(
-                '${currentPatient.latitude!.toStringAsFixed(6)}, ${currentPatient.longitude!.toStringAsFixed(6)}',
-              ),
-            ),
-        ],
-        const SizedBox(height: 20),
-        if (widget.draft.description.trim().isNotEmpty)
-          Text(widget.draft.description),
-        if (widget.draft.audioPath != null)
-          const ListTile(
-            leading: Icon(Icons.mic),
-            title: Text('Audio adjunto'),
-            subtitle: Text(
-              'La descripción transcrita puede revisarse antes de continuar.',
-            ),
-          ),
-        if (widget.draft.photoPath != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Image.file(
-              File(widget.draft.photoPath!),
-              height: 220,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const Text(
-                'La foto adjunta ya no está disponible en este dispositivo.',
-              ),
-            ),
-          ),
-        if (widget.draft.photoPath != null)
-          const Text(
-            'Gemma analizará señales visibles de la foto junto con tu descripción. No usará la imagen para inferir un diagnóstico, la respiración ni el estado de conciencia.',
-          ),
-        if (deliveryTitle() case final title?)
-          ListTile(
-            leading: Icon(
-              syncStatus == 'confirmed'
-                  ? Icons.cloud_done_outlined
-                  : Icons.cloud_upload_outlined,
-            ),
-            title: Text(title),
-            subtitle: deliveryError == null ? null : Text(deliveryError!),
-          ),
-        const SizedBox(height: 16),
-        const Card(
+  Widget build(BuildContext context) {
+    // 1. Screen C-03: Processing in device view
+    if (busy && guidance == null) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Procesando consulta'),
+          bottom: const SystemStatusBar(mode: SystemStatusMode.offline),
+        ),
+        body: SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Antes de seguir: ¿el lugar es seguro?, ¿la persona responde?, ¿respira normalmente?, ¿hay sangrado intenso? Si falta una respuesta, vuelve y añádela a la descripción para elegir la indicación adecuada. Si la persona no puede responder o hay una señal grave, busca ayuda profesional inmediatamente.',
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Spacer(),
+                // Large circular progress ring
+                const SizedBox(
+                  width: 90,
+                  height: 90,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 6,
+                    color: AppTheme.teal,
+                    backgroundColor: Color(0xFFE2E8F0),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Text(
+                  'Analizando tu consulta',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Todo ocurre en tu dispositivo. No necesitas internet.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    fontSize: 14,
+                    color: AppTheme.slateMuted,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                // Stepper checklist (Wireframe C-03)
+                _buildProcessingStep(
+                  done: true,
+                  active: false,
+                  label: 'Consulta recibida',
+                ),
+                const SizedBox(height: 16),
+                _buildProcessingStep(
+                  done: false,
+                  active: true,
+                  label: 'Buscando en la base médica local',
+                ),
+                const SizedBox(height: 16),
+                _buildProcessingStep(
+                  done: false,
+                  active: false,
+                  label: 'Generando indicaciones',
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.border, width: 1.4),
+                      foregroundColor: AppTheme.slate,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        if (guidance?.urgent == true)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Busca apoyo profesional inmediatamente.'),
-            ),
+      );
+    }
+
+    // 2. Screen C-05: Safe Response when insufficient info
+    if (guidance != null && !guidance!.isReady) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Orientación médica'),
+          bottom: const SystemStatusBar(mode: SystemStatusMode.offline),
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            children: [
+              const SizedBox(height: 16),
+              const Center(
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: 72,
+                  color: AppTheme.amber,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No hay información suficiente',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'No podemos darte una orientación confiable para esta situación. Para evitar acciones inseguras, no generaremos instrucciones.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontBody,
+                  fontSize: 14,
+                  color: AppTheme.slateMuted,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 28),
+              // Highlight Card (Wireframe C-05)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceMuted,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: const Text(
+                  'Agrega más detalles: qué ocurrió, dónde está la herida y si la persona responde.',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    fontSize: 14,
+                    color: AppTheme.slate,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 36),
+              // Primary Button: Editar consulta
+              SizedBox(
+                height: 50,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF64748B),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Editar consulta'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Emergency CTA: Solicitar apoyo profesional
+              SizedBox(
+                height: 50,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppTheme.emergency, width: 1.4),
+                    foregroundColor: AppTheme.emergency,
+                  ),
+                  onPressed: confirmProfessionalHelpModal,
+                  child: const Text('Solicitar apoyo profesional'),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Si hay signos graves, busca ayuda profesional de inmediato.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontBody,
+                  fontSize: 12,
+                  color: AppTheme.slateMuted,
+                ),
+              ),
+            ],
           ),
-        if (guidance case final result?) ...[
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.priority_high),
-              title: const Text('Prioridad preliminar'),
-              subtitle: Text(
-                '${priorityLabel(result.preliminaryPriority)}\n'
-                '${result.priorityReason ?? 'Completa los datos o solicita valoración profesional.'}',
+        ),
+      );
+    }
+
+    // 3. Screen C-04: Orientación médica
+    final result = guidance;
+    final allSteps = <String>[
+      if (result != null) ...result.measures,
+      if (result != null) ...result.medicalIndications,
+    ];
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: Text(saved ? 'Revisar consulta' : 'Orientación médica'),
+        bottom: const SystemStatusBar(mode: SystemStatusMode.offline),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                children: [
+                  // Priority Pill Chip (Wireframe C-04)
+                  if (result != null) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: PriorityBadge(
+                        label: 'Prioridad preliminar: ${priorityLabel(result.preliminaryPriority)}',
+                        priorityLevel: result.preliminaryPriority?.name,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Severity warning banner (Wireframe C-04)
+                  if (result?.urgent == true ||
+                      result?.preliminaryPriority == PreliminaryPriority.high) ...[
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.redSoft,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFECACA), width: 1.2),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: AppTheme.emergency, size: 28),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Señales de gravedad detectadas',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontHeading,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.emergency,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Busca atención profesional de inmediato.',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontBody,
+                                    fontSize: 12.5,
+                                    color: Color(0xFF991B1B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Sequential Numbered Steps (Checklist Cards - Wireframe C-04)
+                  if (allSteps.isNotEmpty)
+                    for (var i = 0; i < allSteps.length; i++)
+                      StepCard(
+                        number: i + 1,
+                        title: _extractStepTitle(allSteps[i]),
+                        description: _extractStepDescription(allSteps[i]),
+                      )
+                  else if (result != null && result.message.isNotEmpty)
+                    StepCard(
+                      number: 1,
+                      title: 'Orientación',
+                      description: result.message,
+                    ),
+
+                  const SizedBox(height: 12),
+
+                  // Fuentes médicas utilizadas (Wireframe C-04)
+                  if (result != null && result.sources.isNotEmpty) ...[
+                    const Text(
+                      'Fuentes médicas utilizadas',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontHeading,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.slate,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final source in result.sources)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppTheme.border, width: 1.2),
+                            ),
+                            child: Text(
+                              source.institution.isNotEmpty
+                                  ? source.institution
+                                  : source.title,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontBody,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.slate,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Disclaimer text (Wireframe C-04)
+                  const Text(
+                    'Orientación preliminar. No reemplaza la evaluación de un profesional de la salud.',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontBody,
+                      fontSize: 12,
+                      color: AppTheme.slateMuted,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  // Patient info and delivery status if saved or present
+                  if (patient case final currentPatient?) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.borderLight),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Paciente: ${currentPatient.name} · ${currentPatient.ageYears} años',
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontHeading,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                          if (currentPatient.province != null)
+                            Text('Provincia: ${currentPatient.province}'),
+                          if (currentPatient.locationDescription != null)
+                            Text('Ubicación: ${currentPatient.locationDescription}'),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  if (deliveryTitle() case final title?) ...[
+                    const SizedBox(height: 12),
+                    StatusPill(
+                      label: title,
+                      isUrgent: helpRequested && syncStatus == 'pending',
+                    ),
+                  ],
+
+                  if (saveError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        saveError!,
+                        style: const TextStyle(color: AppTheme.emergency),
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-          ),
-          Text(result.message),
-          if (result.isReady) ...[
-            section('1. Medidas a tomar', result.measures),
-            section(
-              '2. Indicaciones médicas a ejecutar',
-              result.medicalIndications,
-            ),
-            section(
-              '3. ¿Es necesario pedir ayuda profesional?',
-              result.professionalHelp,
-              lead: helpLabel(result.professionalHelpRecommended),
+
+            // Bottom Buttons (Wireframe C-04)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Emergency CTA: Solicitar apoyo profesional
+                  SizedBox(
+                    height: 50,
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF94A3B8),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: busy ? null : confirmProfessionalHelpModal,
+                      child: const Text('Solicitar apoyo profesional'),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Secondary Button: Guardar consulta
+                  SizedBox(
+                    height: 50,
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppTheme.slate, width: 1.4),
+                        foregroundColor: AppTheme.slate,
+                      ),
+                      onPressed: busy
+                          ? null
+                          : saved
+                          ? () => Navigator.pop(context)
+                          : saveConsultation,
+                      child: Text(saved ? 'Volver' : 'Guardar consulta'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-          if (result.isReady && !saved && patient == null) ...[
-            const SizedBox(height: 20),
-            Text(
-              '¿Deseas solicitar apoyo profesional?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(helpLabel(result.professionalHelpRecommended)),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Solicitar apoyo profesional'),
-              subtitle: const Text('Decide después de leer la orientación.'),
-              value: helpRequested,
-              onChanged: busy
-                  ? null
-                  : (value) => setState(() => helpRequested = value),
-            ),
-          ],
-          if (result.isReady)
-            section('Fuentes', [
-              for (final source in result.sources)
-                '${source.institution}: ${source.title}\n${source.url}',
-            ]),
-        ] else if (consultationId != null)
-          const Text(
-            'Orientación pendiente. Puedes reintentarla cuando el modelo esté listo.',
-          ),
-        if (saveError != null) Text(saveError!),
-        if (deliveryError != null && !helpRequested) Text(deliveryError!),
-        const SizedBox(height: 16),
-        if (guidance == null || !guidance!.isReady)
-          FilledButton(
-            onPressed: busy ? null : generateGuidance,
-            child: Text(
-              busy
-                  ? 'Preparando orientación local...'
-                  : consultationId == null
-                  ? 'Guardar y obtener orientación'
-                  : 'Reintentar orientación',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProcessingStep({
+    required bool done,
+    required bool active,
+    required String label,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: done
+                ? AppTheme.teal
+                : active
+                ? Colors.transparent
+                : Colors.transparent,
+            border: Border.all(
+              color: done
+                  ? AppTheme.teal
+                  : active
+                  ? AppTheme.teal
+                  : AppTheme.border,
+              width: 2,
             ),
           ),
-        if (busy) const Center(child: CircularProgressIndicator()),
-        if (!saved && guidance?.isReady == true)
-          FilledButton(
-            onPressed: busy
-                ? null
-                : helpRequested && patient == null
-                ? continueToPatient
-                : saveConsultation,
-            child: Text(
-              helpRequested && patient == null
-                  ? 'Continuar con datos del paciente'
-                  : patient == null
-                  ? 'Guardar consulta'
-                  : 'Reintentar guardado',
-            ),
+          child: done
+              ? const Icon(Icons.check, size: 16, color: Colors.white)
+              : active
+              ? Center(
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.teal,
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(width: 14),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: AppTheme.fontHeading,
+            fontSize: 14,
+            fontWeight: active || done ? FontWeight.w700 : FontWeight.w500,
+            color: active || done ? AppTheme.slate : AppTheme.slateMuted,
           ),
-        if (saved && !widget.fromHistory)
-          const Text('Consulta guardada en este dispositivo.'),
-        if (!widget.fromHistory && !saved)
-          OutlinedButton(
-            onPressed: busy ? null : () => Navigator.pop(context),
-            child: const Text('Editar descripción'),
-          ),
+        ),
       ],
-    ),
-  );
+    );
+  }
+
+  String _extractStepTitle(String text) {
+    if (text.contains(':')) {
+      return text.split(':').first.trim();
+    }
+    if (text.contains('.')) {
+      final first = text.split('.').first.trim();
+      if (first.length < 50) return first;
+    }
+    return text.length > 40 ? '${text.substring(0, 37)}...' : text;
+  }
+
+  String _extractStepDescription(String text) {
+    if (text.contains(':')) {
+      final parts = text.split(':');
+      if (parts.length > 1) return parts.sublist(1).join(':').trim();
+    }
+    if (text.contains('.')) {
+      final parts = text.split('.');
+      if (parts.length > 1 && parts[0].length < 50) {
+        return parts.sublist(1).join('.').trim();
+      }
+    }
+    return text;
+  }
 }
 
 T? _provided<T>(BuildContext context) {
