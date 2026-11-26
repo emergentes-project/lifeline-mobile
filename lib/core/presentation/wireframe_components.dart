@@ -37,6 +37,7 @@ class LifelineLogoBadge extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 'LOGO',
+                textScaler: TextScaler.noScaling,
                 style: TextStyle(
                   fontFamily: AppTheme.fontHeading,
                   fontSize: size * 0.13,
@@ -406,10 +407,10 @@ class DashedOutlineButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
       width: double.infinity,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
           side: const BorderSide(
             color: Color(0xFF94A3B8),
             width: 1.4,
@@ -428,13 +429,16 @@ class DashedOutlineButton extends StatelessWidget {
               Icon(icon, size: 20, color: AppTheme.slateMuted),
               const SizedBox(width: 8),
             ],
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: AppTheme.fontHeading,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.slateMuted,
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontHeading,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.slateMuted,
+                ),
               ),
             ),
           ],

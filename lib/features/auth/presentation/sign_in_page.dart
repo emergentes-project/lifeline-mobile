@@ -46,11 +46,6 @@ class _SignInPageState extends State<SignInPage> {
             Navigator.canPop(context)) {
           Navigator.pop(context);
         }
-        if (state.error != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.error!)));
-        }
       },
       child: AutofillGroup(
         child: Form(
@@ -121,6 +116,42 @@ class _SignInPageState extends State<SignInPage> {
                 ),
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Ingresa tu contraseña' : null,
+              ),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state.error == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.redSoft,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppTheme.emergency,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                state.error!,
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontBody,
+                                  color: AppTheme.emergency,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 24),
               BlocBuilder<AuthCubit, AuthState>(

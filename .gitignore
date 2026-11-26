@@ -38,6 +38,8 @@ migrate_working_dir/
 /android/app/src/main/assets/gemma-4-E2B-it.litertlm
 /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
+/android/key.properties
+/.signing/
 
 # Symbolication related
 app.*.symbols

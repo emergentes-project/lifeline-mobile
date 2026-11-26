@@ -176,6 +176,33 @@ void main() {
     expect(stored?.patient?.requesterPhone, '999111222');
   });
 
+  test('sends every guidance step for the professional case view', () async {
+    final repository = await _repository(directory, 'full-guidance.db');
+    await _saveReady(
+      repository,
+      ownerKey: 'guest',
+      measures: const ['Protege la cabeza.', 'Comprueba la respiración.'],
+      medicalIndications: const ['Evita mover a la persona.'],
+      professionalHelp: const ['Llama al servicio de emergencias.'],
+    );
+    late Map<String, dynamic> body;
+    final service = _service(
+      repository,
+      MockClient((request) async {
+        body = _jsonBody(request);
+        return http.Response(jsonEncode({'id': 'backend-full'}), 201);
+      }),
+    );
+
+    await service.syncPending(ownerKey: 'guest');
+
+    final text = body['answer']['guidanceText'] as String;
+    expect(text, contains('1. Protege la cabeza.'));
+    expect(text, contains('2. Comprueba la respiración.'));
+    expect(text, contains('1. Evita mover a la persona.'));
+    expect(text, contains('1. Llama al servicio de emergencias.'));
+  });
+
   test(
     'helpRequested true sends the requester phone for case details',
     () async {
@@ -607,6 +634,9 @@ Future<SavedConsultation> _saveReady(
   bool? professionalHelpRecommended = true,
   GuidanceStatus guidanceStatus = GuidanceStatus.ready,
   MedicalSource? source,
+  List<String> measures = const [],
+  List<String> medicalIndications = const [],
+  List<String> professionalHelp = const [],
 }) async {
   final id = await repository.saveDraft(
     ConsultationDraft(
@@ -622,6 +652,9 @@ Future<SavedConsultation> _saveReady(
     ConsultationGuidance(
       status: guidanceStatus,
       message: 'Lavar la herida',
+      measures: measures,
+      medicalIndications: medicalIndications,
+      professionalHelp: professionalHelp,
       preliminaryPriority: priority,
       professionalHelpRecommended: professionalHelpRecommended,
       sources: [?source],

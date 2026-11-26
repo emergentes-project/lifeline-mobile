@@ -409,7 +409,7 @@ class ConsultationSyncService {
               'phone': patient.requesterPhone,
             },
       'answer': {
-        'guidanceText': guidance.message,
+        'guidanceText': guidance.fullTextForProfessional,
         'guidanceStatus': 'GENERATED',
         'preliminaryPriority': guidance.preliminaryPriority?.name.toUpperCase(),
         'professionalHelpRecommended':

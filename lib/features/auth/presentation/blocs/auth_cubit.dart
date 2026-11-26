@@ -3,6 +3,7 @@ import '../../application/restore_session_service.dart';
 import '../../application/sign_in_service.dart';
 import '../../application/sign_out_service.dart';
 import '../../application/unlock_private_data_service.dart';
+import '../../data/remote/auth_api_service.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
 
@@ -57,8 +58,15 @@ class AuthCubit extends Cubit<AuthState> {
           user: await SignInService(repository)(email, password),
         ),
       );
-    } catch (e) {
-      emit(AuthState(status: AuthStatus.signedOut, error: '$e'));
+    } on AuthApiException catch (error) {
+      emit(AuthState(status: AuthStatus.signedOut, error: error.message));
+    } catch (_) {
+      emit(
+        const AuthState(
+          status: AuthStatus.signedOut,
+          error: 'No se pudo completar el ingreso por un error de la app.',
+        ),
+      );
     }
   }
 

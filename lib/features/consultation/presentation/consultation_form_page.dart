@@ -35,7 +35,6 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
   String? transcription;
   bool noVoiceDetected = false;
   String? inputError;
-  bool needProfessionalHelp = false;
   TriageAnswer responds = TriageAnswer.unknown;
   TriageAnswer breathesNormally = TriageAnswer.unknown;
   TriageAnswer heavyBleeding = TriageAnswer.unknown;
@@ -50,7 +49,10 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       initialValue: value,
       decoration: InputDecoration(
         labelText: label,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
       ),
       items: const [
         DropdownMenuItem(value: TriageAnswer.unknown, child: Text('No sé')),
@@ -195,7 +197,7 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
       responds: responds,
       breathesNormally: breathesNormally,
       heavyBleeding: heavyBleeding,
-      helpRequested: needProfessionalHelp,
+      helpRequested: false,
     );
     if (recording || busy) {
       message('Espera a que termine la grabación y transcripción.');
@@ -297,9 +299,9 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                 // Header (Wireframe C-01)
                 Text(
                   'Cuéntanos qué pasó',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
 
@@ -342,51 +344,56 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                     Expanded(
                       child: SizedBox(
                         height: 52,
-                        child: OutlinedButton.styleFrom(
-                          backgroundColor: recording
-                              ? AppTheme.redSoft
-                              : Colors.white,
-                          side: BorderSide(
-                            color: recording ? AppTheme.emergency : AppTheme.border,
-                            width: 1.4,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ).let(
-                          (style) => OutlinedButton(
-                            style: style,
-                            onPressed: busy ? null : toggleRecording,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  recording ? Icons.stop_circle : Icons.mic_rounded,
-                                  color: recording
-                                      ? AppTheme.emergency
-                                      : AppTheme.teal,
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    recording ? 'Detener' : 'Grabar voz',
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontHeading,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
+                        child:
+                            OutlinedButton.styleFrom(
+                              backgroundColor: recording
+                                  ? AppTheme.redSoft
+                                  : Colors.white,
+                              side: BorderSide(
+                                color: recording
+                                    ? AppTheme.emergency
+                                    : AppTheme.border,
+                                width: 1.4,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ).let(
+                              (style) => OutlinedButton(
+                                style: style,
+                                onPressed: busy ? null : toggleRecording,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      recording
+                                          ? Icons.stop_circle
+                                          : Icons.mic_rounded,
                                       color: recording
                                           ? AppTheme.emergency
-                                          : AppTheme.slate,
+                                          : AppTheme.teal,
+                                      size: 22,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        recording ? 'Detener' : 'Grabar voz',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontHeading,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          color: recording
+                                              ? AppTheme.emergency
+                                              : AppTheme.slate,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -471,7 +478,10 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                           ? null
                           : () => transcribeAudio(audioPath!),
                       trailing: IconButton(
-                        icon: const Icon(Icons.close, color: AppTheme.slateMuted),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppTheme.slateMuted,
+                        ),
                         tooltip: 'Quitar audio grabado',
                         onPressed: busy || recording
                             ? null
@@ -545,7 +555,10 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                 // Ubicación registrada (GPS) (Wireframe C-01)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -553,7 +566,11 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.location_on_outlined, color: AppTheme.teal, size: 22),
+                      Icon(
+                        Icons.location_on_outlined,
+                        color: AppTheme.teal,
+                        size: 22,
+                      ),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -566,42 +583,12 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
                           ),
                         ),
                       ),
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFF10B981),
+                        size: 20,
+                      ),
                     ],
-                  ),
-                ),
-
-                // Switch: Necesito apoyo profesional (Wireframe C-01)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.border, width: 1.2),
-                  ),
-                  child: SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    activeTrackColor: AppTheme.cyan,
-                    title: const Text(
-                      'Necesito apoyo profesional',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontHeading,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppTheme.slate,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Se pedirán los datos del paciente',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontBody,
-                        fontSize: 12,
-                        color: AppTheme.slateMuted,
-                      ),
-                    ),
-                    value: needProfessionalHelp,
-                    onChanged: (val) => setState(() => needProfessionalHelp = val),
                   ),
                 ),
 
@@ -662,7 +649,9 @@ class _ConsultationFormPageState extends State<ConsultationFormPage> {
           if (index == 1) {
             await Navigator.push<void>(
               context,
-              MaterialPageRoute(builder: (_) => const ConsultationHistoryPage()),
+              MaterialPageRoute(
+                builder: (_) => const ConsultationHistoryPage(),
+              ),
             );
           } else if (index == 2) {
             await Navigator.push<void>(

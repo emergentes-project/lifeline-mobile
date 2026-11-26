@@ -40,4 +40,19 @@ class ConsultationGuidance {
   final bool? professionalHelpRecommended;
 
   bool get isReady => status == GuidanceStatus.ready;
+
+  String get fullTextForProfessional {
+    String numbered(List<String> items) => [
+      for (var i = 0; i < items.length; i++) '${i + 1}. ${items[i]}',
+    ].join('\n');
+
+    final sections = [
+      if (measures.isNotEmpty) 'Medidas iniciales\n${numbered(measures)}',
+      if (medicalIndications.isNotEmpty)
+        'Indicaciones médicas\n${numbered(medicalIndications)}',
+      if (professionalHelp.isNotEmpty)
+        'Apoyo profesional\n${numbered(professionalHelp)}',
+    ];
+    return sections.isEmpty ? message : sections.join('\n\n');
+  }
 }

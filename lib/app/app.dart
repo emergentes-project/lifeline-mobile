@@ -172,11 +172,12 @@ class _LifelineAppState extends State<LifelineApp> {
         builder: (context, state) {
           switch (state.status) {
             case AuthStatus.loading:
-            case AuthStatus.busy:
-              if (state.user != null) return const LockedPage();
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
+            case AuthStatus.busy:
+              if (state.user != null) return const LockedPage();
+              return const EntryPage();
             case AuthStatus.signedOut:
               return const EntryPage();
             case AuthStatus.locked:

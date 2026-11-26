@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -31,6 +32,61 @@ void main() {
     expect(user.token, 'jwt');
     expect(user.phone, '999111222');
     expect(user.toJson()['user']['phone'], '999111222');
+  });
+
+  test(
+    'sign in distinguishes invalid credentials and backend failure',
+    () async {
+      Future<String> failureFor(int status) async {
+        final api = AuthApiService(
+          MockClient((_) async => http.Response('{}', status)),
+        );
+        try {
+          await api.signIn('ana@example.com', 'password');
+          fail('Expected sign in to fail');
+        } on AuthApiException catch (error) {
+          return error.message;
+        }
+      }
+
+      expect(
+        await failureFor(401),
+        contains('Correo o contraseña incorrectos'),
+      );
+      expect(await failureFor(500), contains('fallo interno'));
+    },
+  );
+
+  test('sign in explains when the published web app is stopped', () async {
+    final api = AuthApiService(
+      MockClient((_) async => http.Response('This web app is stopped', 403)),
+    );
+    await expectLater(
+      api.signIn('ana@example.com', 'password'),
+      throwsA(
+        isA<AuthApiException>().having(
+          (error) => error.message,
+          'message',
+          contains('servidor está detenido'),
+        ),
+      ),
+    );
+  });
+
+  test('sign in explains connection failure', () async {
+    final api = AuthApiService(
+      MockClient((_) async => throw const SocketException('Offline')),
+    );
+    await expectLater(
+      api.signIn('ana@example.com', 'password'),
+      throwsA(
+        isA<AuthApiException>().having(
+          (error) => error.message,
+          'message',
+          contains('No se pudo conectar'),
+        ),
+      ),
+    );
   });
 
   test('offline verifier depends on password and salt', () {

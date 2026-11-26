@@ -110,7 +110,10 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 children: [
                   // Subtitle (Wireframe C-02)
                   const Text(
@@ -164,7 +167,10 @@ class _PatientFieldsPageState extends State<PatientFieldsPage> {
                           decoration: const InputDecoration(
                             labelText: 'Provincia',
                             hintText: 'Ej. Lima',
-                            suffixIcon: Icon(Icons.keyboard_arrow_down, size: 20),
+                            suffixIcon: Icon(
+                              Icons.keyboard_arrow_down,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -666,7 +672,10 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                   height: 50,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppTheme.border, width: 1.4),
+                      side: const BorderSide(
+                        color: AppTheme.border,
+                        width: 1.4,
+                      ),
                       foregroundColor: AppTheme.slate,
                     ),
                     onPressed: () => Navigator.pop(context),
@@ -674,6 +683,46 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (saved && guidance == null) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Orientación pendiente'),
+          bottom: const SystemStatusBar(mode: SystemStatusMode.offline),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.history_rounded,
+                    size: 64,
+                    color: AppTheme.teal,
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Esta consulta aún no tiene orientación médica.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: generateGuidance,
+                      child: const Text('Reintentar orientación'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -757,7 +806,10 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                 height: 50,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.emergency, width: 1.4),
+                    side: const BorderSide(
+                      color: AppTheme.emergency,
+                      width: 1.4,
+                    ),
                     foregroundColor: AppTheme.emergency,
                   ),
                   onPressed: confirmProfessionalHelpModal,
@@ -798,14 +850,18 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 children: [
                   // Priority Pill Chip (Wireframe C-04)
                   if (result != null) ...[
                     Align(
                       alignment: Alignment.centerLeft,
                       child: PriorityBadge(
-                        label: 'Prioridad preliminar: ${priorityLabel(result.preliminaryPriority)}',
+                        label:
+                            'Prioridad preliminar: ${priorityLabel(result.preliminaryPriority)}',
                         priorityLevel: result.preliminaryPriority?.name,
                       ),
                     ),
@@ -814,17 +870,25 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
 
                   // Severity warning banner (Wireframe C-04)
                   if (result?.urgent == true ||
-                      result?.preliminaryPriority == PreliminaryPriority.high) ...[
+                      result?.preliminaryPriority ==
+                          PreliminaryPriority.high) ...[
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: AppTheme.redSoft,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFECACA), width: 1.2),
+                        border: Border.all(
+                          color: const Color(0xFFFECACA),
+                          width: 1.2,
+                        ),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.warning_amber_rounded, color: AppTheme.emergency, size: 28),
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: AppTheme.emergency,
+                            size: 28,
+                          ),
                           SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -892,11 +956,17 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                       children: [
                         for (final source in result.sources)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppTheme.border, width: 1.2),
+                              border: Border.all(
+                                color: AppTheme.border,
+                                width: 1.2,
+                              ),
                             ),
                             child: Text(
                               source.institution.isNotEmpty
@@ -950,7 +1020,9 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                           if (currentPatient.province != null)
                             Text('Provincia: ${currentPatient.province}'),
                           if (currentPatient.locationDescription != null)
-                            Text('Ubicación: ${currentPatient.locationDescription}'),
+                            Text(
+                              'Ubicación: ${currentPatient.locationDescription}',
+                            ),
                         ],
                       ),
                     ),
@@ -1004,7 +1076,10 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                     width: double.infinity,
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.slate, width: 1.4),
+                        side: const BorderSide(
+                          color: AppTheme.slate,
+                          width: 1.4,
+                        ),
                         foregroundColor: AppTheme.slate,
                       ),
                       onPressed: busy
@@ -1080,28 +1155,25 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   }
 
   String _extractStepTitle(String text) {
-    if (text.contains(':')) {
-      return text.split(':').first.trim();
-    }
-    if (text.contains('.')) {
-      final first = text.split('.').first.trim();
-      if (first.length < 50) return first;
-    }
-    return text.length > 40 ? '${text.substring(0, 37)}...' : text;
+    return _stepParts(text).$1;
   }
 
   String _extractStepDescription(String text) {
-    if (text.contains(':')) {
-      final parts = text.split(':');
-      if (parts.length > 1) return parts.sublist(1).join(':').trim();
+    return _stepParts(text).$2;
+  }
+
+  (String, String) _stepParts(String text) {
+    final value = text.trim();
+    final separator = RegExp(r'[:,.]').firstMatch(value);
+    if (separator == null ||
+        separator.start == 0 ||
+        separator.end == value.length) {
+      return (value, '');
     }
-    if (text.contains('.')) {
-      final parts = text.split('.');
-      if (parts.length > 1 && parts[0].length < 50) {
-        return parts.sublist(1).join('.').trim();
-      }
-    }
-    return text;
+    return (
+      value.substring(0, separator.start).trim(),
+      value.substring(separator.end).trim(),
+    );
   }
 }
 

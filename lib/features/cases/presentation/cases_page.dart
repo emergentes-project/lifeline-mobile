@@ -123,7 +123,9 @@ class _CasesPageState extends State<CasesPage> {
       // Medical Bottom Navigation Bar (Wireframe M-01, M-04, M-06)
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppTheme.borderLight, width: 1)),
+          border: Border(
+            top: BorderSide(color: AppTheme.borderLight, width: 1),
+          ),
         ),
         child: BottomNavigationBar(
           currentIndex: currentTab,
@@ -360,7 +362,8 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
               ),
               const SizedBox(height: 8),
               TextField(
-                onChanged: (value) => setSheetState(() => observationText = value),
+                onChanged: (value) =>
+                    setSheetState(() => observationText = value),
                 autofocus: true,
                 maxLines: 4,
                 decoration: const InputDecoration(
@@ -378,7 +381,8 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                   ),
                   onPressed: observationText.trim().isEmpty
                       ? null
-                      : () => Navigator.pop(sheetContext, observationText.trim()),
+                      : () =>
+                            Navigator.pop(sheetContext, observationText.trim()),
                   child: const Text('Confirmar cierre'),
                 ),
               ),
@@ -473,7 +477,9 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                             backgroundColor: const Color(0xFF64748B),
                             foregroundColor: Colors.white,
                           ),
-                          onPressed: acting ? null : () => act(CaseAction.start),
+                          onPressed: acting
+                              ? null
+                              : () => act(CaseAction.start),
                           child: const Text('Iniciar atención'),
                         ),
                       ),
@@ -482,7 +488,9 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                         height: 48,
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed: acting ? null : () => act(CaseAction.release),
+                          onPressed: acting
+                              ? null
+                              : () => act(CaseAction.release),
                           child: const Text('Liberar caso'),
                         ),
                       ),
@@ -538,12 +546,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                       isOutlined: true,
                     ),
                     if (data?.helpRequested == true)
-                      const StatusPill(
-                        label: 'Apoyo urgente',
-                        isUrgent: true,
-                      ),
+                      const StatusPill(label: 'Apoyo urgente', isUrgent: true),
                     PriorityBadge(
-                      label: 'Prioridad: ${casePriorityLabel(answer?.preliminaryPriority)}',
+                      label:
+                          'Prioridad: ${casePriorityLabel(answer?.preliminaryPriority)}',
                       priorityLevel: answer?.preliminaryPriority,
                     ),
                   ],
@@ -661,7 +667,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                     border: Border.all(color: AppTheme.borderLight, width: 1.2),
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
                     title: const Text(
                       'Orientación generada',
                       style: TextStyle(
@@ -671,14 +680,28 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                       ),
                     ),
                     subtitle: Text(
-                      answer?.guidanceText != null && answer!.guidanceText!.isNotEmpty
+                      answer?.guidanceText != null &&
+                              answer!.guidanceText!.isNotEmpty
                           ? answer.guidanceText!
-                          : 'Vista preliminar · indicación local',
+                          : 'No se registró una orientación para esta consulta.',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12.5),
                     ),
-                    trailing: const Icon(Icons.chevron_right, color: AppTheme.slateMuted),
+                    trailing: answer == null
+                        ? null
+                        : const Icon(
+                            Icons.chevron_right,
+                            color: AppTheme.slateMuted,
+                          ),
+                    onTap: answer == null
+                        ? null
+                        : () => Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CaseGuidancePage(answer: answer),
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -696,9 +719,12 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                 const SizedBox(height: 8),
                 MapPreviewCard(
                   height: 140,
-                  coordinatesText: patient?.latitude != null && patient?.longitude != null
+                  coordinatesText:
+                      patient?.latitude != null && patient?.longitude != null
                       ? 'GPS: ${patient!.latitude}, ${patient.longitude} · ${patient.province ?? patient.locationDescription ?? 'Lima'}'
-                      : (patient?.province ?? patient?.locationDescription ?? 'Coordenadas capturadas por GPS'),
+                      : (patient?.province ??
+                            patient?.locationDescription ??
+                            'Coordenadas capturadas por GPS'),
                 ),
 
                 if (current.observation != null) ...[
@@ -708,7 +734,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.borderLight, width: 1.2),
+                      border: Border.all(
+                        color: AppTheme.borderLight,
+                        width: 1.2,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -739,6 +768,120 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                 const SizedBox(height: 24),
               ],
             ),
+    );
+  }
+}
+
+class CaseGuidancePage extends StatelessWidget {
+  const CaseGuidancePage({super.key, required this.answer});
+
+  final CaseAnswer answer;
+
+  @override
+  Widget build(BuildContext context) {
+    final guidanceText = answer.guidanceText?.trim() ?? '';
+    final sections = guidanceText
+        .split('\n\n')
+        .where((section) => section.trim().isNotEmpty);
+
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('Orientación médica'),
+        bottom: const SystemStatusBar(mode: SystemStatusMode.connected),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        children: [
+          PriorityBadge(
+            label:
+                'Prioridad preliminar: ${casePriorityLabel(answer.preliminaryPriority)}',
+            priorityLevel: answer.preliminaryPriority,
+          ),
+          const SizedBox(height: 16),
+          if (guidanceText.isEmpty)
+            const Text('No se registró una orientación para esta consulta.')
+          else
+            for (final section in sections) _CaseGuidanceSection(text: section),
+          if (answer.sources.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Fuentes médicas utilizadas',
+              style: TextStyle(
+                fontFamily: AppTheme.fontHeading,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.slate,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final source in answer.sources)
+                  Chip(
+                    label: Text(
+                      source.institution?.isNotEmpty == true
+                          ? source.institution!
+                          : source.title ?? 'Fuente médica',
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _CaseGuidanceSection extends StatelessWidget {
+  const _CaseGuidanceSection({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final lineBreak = text.indexOf('\n');
+    final hasHeading =
+        lineBreak >= 0 &&
+        !RegExp(r'^\d+\. ').hasMatch(text.substring(0, lineBreak));
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.borderLight, width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasHeading) ...[
+            Text(
+              text.substring(0, lineBreak),
+              style: const TextStyle(
+                fontFamily: AppTheme.fontHeading,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.slate,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          SelectableText(
+            hasHeading ? text.substring(lineBreak + 1) : text,
+            style: const TextStyle(
+              fontFamily: AppTheme.fontBody,
+              fontSize: 14,
+              height: 1.5,
+              color: AppTheme.slate,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

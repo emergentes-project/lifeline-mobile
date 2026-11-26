@@ -609,17 +609,17 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Luis'), findsOneWidget);
-    expect(find.text('Ana'), findsOneWidget);
-    await tester.tap(find.text('Luis'));
+    expect(find.text('Sangrado'), findsOneWidget);
+    expect(find.text('Corte leve'), findsOneWidget);
+    await tester.tap(find.text('Sangrado'));
     await tester.pumpAndSettle();
     expect(find.text('Reintentar orientación'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Ana'));
+    await tester.tap(find.text('Corte leve'));
     await tester.pumpAndSettle();
-    expect(find.text('Respuesta guardada'), findsOneWidget);
-    expect(find.text('1. Lavar la herida'), findsOneWidget);
+    expect(find.text('Revisar consulta'), findsOneWidget);
+    expect(find.text('Lavar la herida'), findsOneWidget);
     expect(find.text('Reintentar orientación'), findsNothing);
   });
 
@@ -629,8 +629,9 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(home: ConsultationFormPage(guest: true)),
     );
-    expect(find.text('Obtener orientación'), findsOneWidget);
+    expect(find.text('Obtener orientación médica'), findsOneWidget);
     expect(find.text('Solicitar apoyo profesional'), findsNothing);
+    expect(find.text('Necesito apoyo profesional'), findsNothing);
     expect(find.text('Nombre del paciente'), findsNothing);
 
     final repository = LocalConsultationRepository(
@@ -658,11 +659,36 @@ void main() {
         ),
       ),
     );
-    await tester.scrollUntilVisible(find.byType(SwitchListTile), 250);
     expect(find.text('Solicitar apoyo profesional'), findsOneWidget);
     expect(find.text('Nombre del paciente'), findsNothing);
-    await tester.scrollUntilVisible(find.text('Guardar consulta'), 250);
     expect(find.text('Guardar consulta'), findsOneWidget);
+  });
+
+  testWidgets('shows the complete title of a medical indication', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ConsultationSummaryPage(
+          draft: ConsultationDraft(description: 'Golpe en la cabeza'),
+          initialGuidance: ConsultationGuidance(
+            status: GuidanceStatus.ready,
+            message: 'Orientación lista',
+            measures: [
+              'Después de un golpe en la cabeza o ante sospecha de lesión de columna, evita movimientos innecesarios.',
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.text(
+        'Después de un golpe en la cabeza o ante sospecha de lesión de columna',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('evita movimientos innecesarios.'), findsOneWidget);
   });
 
   testWidgets('requests patient data only after choosing professional help', (
@@ -693,15 +719,10 @@ void main() {
         ),
       ),
     );
-    await tester.scrollUntilVisible(find.byType(SwitchListTile), 250);
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.text('Solicitar apoyo profesional'));
     await tester.pumpAndSettle();
-    expect(find.text('Continuar con datos del paciente'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Continuar con datos del paciente'),
-      250,
-    );
-    await tester.tap(find.text('Continuar con datos del paciente'));
+    expect(find.text('¿Solicitar apoyo profesional?'), findsOneWidget);
+    await tester.tap(find.text('Sí, solicitar apoyo'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Nombre del paciente'), findsOneWidget);

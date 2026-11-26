@@ -43,18 +43,14 @@ class _EntryPageState extends State<EntryPage> {
           children: [
             const SystemStatusBar(mode: SystemStatusMode.offline),
             Expanded(
-              child: BlocConsumer<AuthCubit, AuthState>(
-                listener: (context, state) {
-                  if (state.error != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.error!)),
-                    );
-                  }
-                },
+              child: BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) {
                   final isBusy = state.status == AuthStatus.busy;
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: AutofillGroup(
                       child: Form(
                         key: form,
@@ -69,11 +65,12 @@ class _EntryPageState extends State<EntryPage> {
                             Text(
                               'Lifeline',
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                color: AppTheme.slate,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
+                              style: Theme.of(context).textTheme.headlineLarge
+                                  ?.copyWith(
+                                    color: AppTheme.slate,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
                             ),
                             const SizedBox(height: 6),
                             // Subtitle
@@ -120,8 +117,9 @@ class _EntryPageState extends State<EntryPage> {
                                   tooltip: showPassword
                                       ? 'Ocultar contraseña'
                                       : 'Mostrar contraseña',
-                                  onPressed: () =>
-                                      setState(() => showPassword = !showPassword),
+                                  onPressed: () => setState(
+                                    () => showPassword = !showPassword,
+                                  ),
                                   icon: Icon(
                                     showPassword
                                         ? Icons.visibility_off
@@ -134,6 +132,38 @@ class _EntryPageState extends State<EntryPage> {
                                   ? 'Ingresa tu contraseña'
                                   : null,
                             ),
+                            if (state.error != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Semantics(
+                                  liveRegion: true,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.redSoft,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.error_outline,
+                                          color: AppTheme.emergency,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            state.error!,
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontBody,
+                                              color: AppTheme.emergency,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             const SizedBox(height: 24),
                             // Iniciar sesión CTA (Filled Button)
                             FilledButton(
@@ -161,13 +191,17 @@ class _EntryPageState extends State<EntryPage> {
                             // Crear cuenta CTA (Outlined Button)
                             OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppTheme.slate, width: 1.5),
+                                side: const BorderSide(
+                                  color: AppTheme.slate,
+                                  width: 1.5,
+                                ),
                                 foregroundColor: AppTheme.slate,
                               ),
                               onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const CitizenRegistrationPage(),
+                                  builder: (_) =>
+                                      const CitizenRegistrationPage(),
                                 ),
                               ),
                               child: const Text('Crear cuenta'),
