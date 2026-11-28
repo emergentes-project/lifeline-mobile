@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/presentation/system_status_bar.dart';
 import '../../../core/presentation/wireframe_components.dart';
@@ -299,6 +300,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   String? backendConsultationId;
   String? deliveryError;
   String? remoteCaseLabel;
+  StreamSubscription<({String ownerKey, bool needsSync})>? _localChanges;
 
   @override
   void initState() {
@@ -310,6 +312,11 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     helpRequested = widget.draft.helpRequested;
     syncStatus = widget.initialSyncStatus;
     backendConsultationId = widget.initialBackendConsultationId;
+    final repository = _provided<LocalConsultationRepository>(context);
+    _localChanges = repository?.changes.listen((change) {
+      if (mounted && consultationId != null) unawaited(_refreshSaved());
+    });
+    if (saved) unawaited(_refreshSaved());
     if (consultationId == null && guidance == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) generateGuidance();
@@ -319,6 +326,30 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
         if (mounted) loadRemoteCase();
       });
     }
+  }
+
+  Future<void> _refreshSaved() async {
+    if (!mounted || consultationId == null) return;
+    final auth = context.read<AuthCubit>().state;
+    if (auth.status != AuthStatus.guest && auth.status != AuthStatus.authenticated) return;
+    final owner = consultationOwnerKey(auth);
+    try {
+      final row = await context.read<LocalConsultationRepository>().get(consultationId!, ownerKey: owner);
+      if (!mounted || row == null) return;
+      setState(() {
+        saved = true;
+        syncStatus = row.syncStatus;
+        backendConsultationId = row.backendConsultationId;
+        deliveryError = row.syncError;
+        remoteCaseLabel = row.caseStatusLabel ?? remoteCaseLabel;
+      });
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    unawaited(_localChanges?.cancel() ?? Future<void>.value());
+    super.dispose();
   }
 
   Future<void> generateGuidance() async {
@@ -458,7 +489,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   Future<void> saveConsultation() async {
     if (busy ||
         (helpRequested && patient == null) ||
-        guidance?.isReady != true) {
+        guidance == null || (!guidance!.isReady && !helpRequested)) {
       return;
     }
     setState(() {
@@ -518,8 +549,9 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
         final outcomes = await sync.syncPending(
           ownerKey: ownerKey,
           citizenUserId: auth.status == AuthStatus.authenticated
-              ? auth.user?.id
+              && auth.user?.isCitizen == true ? auth.user?.id
               : null,
+          accessToken: auth.user?.token,
         );
         attempt = outcomes
             .where((item) => item.localId == consultationId)
@@ -531,12 +563,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
     if (!mounted || consultationId == null) return;
     final row = await consultations.get(consultationId!, ownerKey: ownerKey);
     if (!mounted) return;
-    final label =
-        row?.syncStatus == 'confirmed' &&
-            helpRequested &&
-            row?.backendConsultationId != null
-        ? await lookupCaseLabel(row!.backendConsultationId!)
-        : null;
+    final label = row?.caseStatusLabel;
     if (!mounted) return;
     setState(() {
       saved = true;
@@ -547,6 +574,7 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
       deliveryError = attempt?.errorMessage;
       remoteCaseLabel = label;
     });
+    if (row?.syncStatus == 'confirmed') unawaited(loadRemoteCase());
     if (!mounted || row == null) return;
     final notices = _provided<DeliveryConfirmationNotices>(context);
     if (knowBefore && notices != null) {
@@ -568,6 +596,15 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
 
   Future<String?> lookupCaseLabel(String backendId) async {
     final auth = context.read<AuthCubit>().state;
+    final sync = _provided<ConsultationSyncService>(context);
+    if (sync != null && (auth.status == AuthStatus.guest || auth.status == AuthStatus.authenticated)) {
+      final owner = consultationOwnerKey(auth);
+      await sync.refreshTracking(ownerKey: owner,
+        citizenUserId: auth.user?.isCitizen == true ? auth.user!.id : null, accessToken: auth.user?.token);
+      if (!mounted || consultationId == null) return null;
+      final row = await context.read<LocalConsultationRepository>().get(consultationId!, ownerKey: owner);
+      return row?.caseStatusLabel;
+    }
     if (auth.status != AuthStatus.authenticated ||
         auth.user?.isCitizen != true) {
       return null;
@@ -589,8 +626,10 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
   String? deliveryTitle() {
     if (!saved || !helpRequested) return null;
     if (syncStatus == 'confirmed') {
-      return remoteCaseLabel ?? 'Envío confirmado.';
+      return 'Envío confirmado.';
     }
+    if (syncStatus == 'sending') return 'Enviando consulta…';
+    if (syncStatus == 'failed') return 'No se pudo enviar. Revisa el error y vuelve a intentar.';
     if (syncStatus != 'pending') return null;
     return 'Envío pendiente. Se reintentará con la misma consulta.';
   }
@@ -1033,6 +1072,9 @@ class _ConsultationSummaryPageState extends State<ConsultationSummaryPage> {
                     StatusPill(
                       label: title,
                       isUrgent: helpRequested && syncStatus == 'pending',
+                    ),
+                    if (remoteCaseLabel != null) Padding(
+                      padding: const EdgeInsets.only(top: 8), child: Text(remoteCaseLabel!),
                     ),
                   ],
 

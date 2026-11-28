@@ -44,6 +44,7 @@ Future<void> main() async {
         deviceToken: token,
         accessToken: accessToken,
       );
+      await deviceNotifications.rotateToken();
     },
   );
   final profileApi = ProfileApiService(http.Client());
