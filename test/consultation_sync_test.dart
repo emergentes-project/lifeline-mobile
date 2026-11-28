@@ -392,7 +392,7 @@ void main() {
     expect(await repository.list(ownerKey: 'guest'), hasLength(1));
   });
 
-  test('http 400 stays pending and keeps the same uuids', () async {
+  test('http 400 stays failed and manual retry keeps the same uuids', () async {
     final repository = await _repository(directory, 'bad.db');
     final before = await _saveReady(repository, ownerKey: 'guest');
     final keys = <String>[];
@@ -411,7 +411,7 @@ void main() {
     final after = await repository.get(before.id, ownerKey: 'guest');
     expect(first.single.errorMessage, 'Datos inválidos');
     expect(second.single.errorMessage, 'Datos inválidos');
-    expect(after?.syncStatus, 'pending');
+    expect(after?.syncStatus, 'failed');
     expect(after?.backendConsultationId, isNull);
     expect(after?.mobileConsultationId, before.mobileConsultationId);
     expect(after?.idempotencyKey, before.idempotencyKey);
@@ -591,7 +591,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Asignado'), findsOneWidget);
-    expect(find.text('Envío confirmado.'), findsNothing);
+    expect(find.text('Envío confirmado.'), findsOneWidget);
     expect(calls.single.url.path, '/api/v1/cases/me');
     expect(calls.single.headers['authorization'], 'Bearer citizen-token');
   });

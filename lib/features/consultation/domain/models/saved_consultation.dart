@@ -13,6 +13,13 @@ class SavedConsultation {
     required this.idempotencyKey,
     this.backendConsultationId,
     this.syncStatus = 'pending',
+    this.guestAccessToken,
+    this.caseId,
+    this.caseStatus,
+    this.caseUpdatedAt,
+    this.syncAttempts = 0,
+    this.nextSyncAt,
+    this.syncError,
   });
 
   final int id;
@@ -24,6 +31,24 @@ class SavedConsultation {
   final String idempotencyKey;
   final String? backendConsultationId;
   final String syncStatus;
+  final String? guestAccessToken;
+  final String? caseId;
+  final String? caseStatus;
+  final DateTime? caseUpdatedAt;
+  final int syncAttempts;
+  final DateTime? nextSyncAt;
+  final String? syncError;
+
+  bool get deliveryPending =>
+      syncStatus == 'pending' || syncStatus == 'sending';
+
+  String? get caseStatusLabel => switch (caseStatus) {
+    'AVAILABLE' => 'Esperando profesional',
+    'ASSIGNED' => 'Profesional asignado',
+    'IN_PROGRESS' => 'En atención',
+    'CLOSED' => 'Atención cerrada',
+    _ => null,
+  };
 
   bool get canRetry => guidance == null || !guidance!.isReady;
 }

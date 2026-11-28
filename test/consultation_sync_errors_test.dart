@@ -59,10 +59,10 @@ void main() {
       final attempts = await service.syncPending(ownerKey: 'guest');
 
       expect(calls, [1, 1, 1]);
-      expect(attempts.map((item) => item.syncStatus), everyElement('pending'));
+      expect(attempts.map((item) => item.syncStatus), containsAll(['pending', 'failed']));
       for (final row in [first, second, third]) {
         final stored = await repository.get(row.id, ownerKey: 'guest');
-        expect(stored?.syncStatus, 'pending');
+        expect(stored?.syncStatus, row.id == second.id ? 'failed' : 'pending');
         expect(stored?.mobileConsultationId, row.mobileConsultationId);
         expect(stored?.idempotencyKey, row.idempotencyKey);
       }

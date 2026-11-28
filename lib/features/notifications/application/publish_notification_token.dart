@@ -47,6 +47,7 @@ Future<void> dispatchNotificationToken({
       helpRequested: item.draft.helpRequested,
       confirmed: item.syncStatus == 'confirmed',
       consultationId: item.backendConsultationId,
+      consultationAccessToken: item.guestAccessToken,
     );
   }
 }

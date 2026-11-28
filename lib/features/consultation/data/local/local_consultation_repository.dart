@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -35,6 +36,15 @@ class LocalConsultationRepository {
   final String? _databasePath;
   final Future<String> Function()? mediaDirectory;
   Database? _database;
+  final _changes =
+      StreamController<({String ownerKey, bool needsSync})>.broadcast();
+  Stream<({String ownerKey, bool needsSync})> get changes => _changes.stream;
+
+  void _notify(String ownerKey, {bool needsSync = false}) {
+    if (!_changes.isClosed) {
+      _changes.add((ownerKey: ownerKey, needsSync: needsSync));
+    }
+  }
 
   /// Prueba: se ejecuta después de copiar los medios y antes del insert.
   Future<void> Function()? failNextCompleteSave;
@@ -85,7 +95,7 @@ class LocalConsultationRepository {
     required ConsultationGuidance guidance,
     required String ownerKey,
   }) async {
-    if (!guidance.isReady) {
+    if (!guidance.isReady && !draft.helpRequested) {
       throw StateError('La orientación todavía no está lista.');
     }
     final db = await _open();
@@ -94,7 +104,7 @@ class LocalConsultationRepository {
       final interrupt = failNextCompleteSave;
       failNextCompleteSave = null;
       if (interrupt != null) await interrupt();
-      return await db.insert(
+      final id = await db.insert(
         'consultations',
         _rowValues(
           draft: draft,
@@ -106,6 +116,8 @@ class LocalConsultationRepository {
           syncStatus: 'pending',
         ),
       );
+      _notify(ownerKey, needsSync: true);
+      return id;
     } catch (_) {
       await _discard(staged.created);
       rethrow;
@@ -142,6 +154,7 @@ class LocalConsultationRepository {
     if (updated == 0) {
       throw StateError('Consulta no disponible para este usuario.');
     }
+    _notify(ownerKey, needsSync: values['sync_status'] == 'pending');
   }
 
   Future<void> updateDelivery(
@@ -149,11 +162,29 @@ class LocalConsultationRepository {
     required String ownerKey,
     required String syncStatus,
     String? backendConsultationId,
+    String? guestAccessToken,
+    int? syncAttempts,
+    DateTime? nextSyncAt,
+    String? syncError,
+    bool resetRetry = false,
   }) async {
     final db = await _open();
     final values = <String, Object?>{'sync_status': syncStatus};
     if (backendConsultationId != null && backendConsultationId.isNotEmpty) {
       values['backend_consultation_id'] = backendConsultationId;
+    }
+    if (guestAccessToken != null && guestAccessToken.isNotEmpty) {
+      values['guest_access_token'] = guestAccessToken;
+    }
+    if (syncAttempts != null) values['sync_attempts'] = syncAttempts;
+    if (nextSyncAt != null) {
+      values['next_sync_at'] = nextSyncAt.toUtc().toIso8601String();
+    }
+    if (syncError != null) values['sync_error'] = syncError;
+    if (syncStatus == 'confirmed' || resetRetry) {
+      values['next_sync_at'] = null;
+      values['sync_error'] = null;
+      if (resetRetry) values['sync_attempts'] = 0;
     }
     final updated = await db.update(
       'consultations',
@@ -164,6 +195,37 @@ class LocalConsultationRepository {
     if (updated == 0) {
       throw StateError('Consulta no disponible para este usuario.');
     }
+    _notify(ownerKey);
+  }
+
+  Future<void> recoverInterrupted(String ownerKey) async {
+    final db = await _open();
+    final changed = await db.update(
+      'consultations',
+      {'sync_status': 'pending'},
+      where: 'owner_key = ? AND sync_status = ?',
+      whereArgs: [ownerKey, 'sending'],
+    );
+    if (changed > 0) _notify(ownerKey);
+  }
+
+  Future<void> updateTracking(
+    int id, {
+    required String ownerKey,
+    String? caseId,
+    String? caseStatus,
+    required DateTime updatedAt,
+  }) async {
+    final db = await _open();
+    final stamp = updatedAt.toUtc().toIso8601String();
+    final changed = await db.update(
+      'consultations',
+      {'case_id': caseId, 'case_status': caseStatus, 'case_updated_at': stamp},
+      where:
+          'id = ? AND owner_key = ? AND (case_updated_at IS NULL OR case_updated_at < ?)',
+      whereArgs: [id, ownerKey, stamp],
+    );
+    if (changed > 0) _notify(ownerKey);
   }
 
   Future<List<SavedConsultation>> list({
@@ -262,6 +324,13 @@ class LocalConsultationRepository {
       idempotencyKey: row['idempotency_key'] as String? ?? '',
       backendConsultationId: row['backend_consultation_id'] as String?,
       syncStatus: row['sync_status'] as String? ?? 'pending',
+      guestAccessToken: row['guest_access_token'] as String?,
+      caseId: row['case_id'] as String?,
+      caseStatus: row['case_status'] as String?,
+      caseUpdatedAt: DateTime.tryParse(row['case_updated_at'] as String? ?? ''),
+      syncAttempts: row['sync_attempts'] as int? ?? 0,
+      nextSyncAt: DateTime.tryParse(row['next_sync_at'] as String? ?? ''),
+      syncError: row['sync_error'] as String?,
       guidance: status == GuidanceStatus.ready || guidanceJson != null
           ? ConsultationGuidance(
               status: status,
@@ -294,7 +363,7 @@ class LocalConsultationRepository {
             'lifeline_consultations.db',
           ),
       options: OpenDatabaseOptions(
-        version: 6,
+        version: 7,
         onCreate: (db, _) async {
           await db.execute('''
             CREATE TABLE consultations (
@@ -318,6 +387,7 @@ class LocalConsultationRepository {
             )
           ''');
           await _createSyncErrors(db);
+          await _addDeliveryDetails(db);
         },
         onUpgrade: (db, oldVersion, _) async {
           if (oldVersion < 2) {
@@ -380,6 +450,7 @@ class LocalConsultationRepository {
             }
           }
           if (oldVersion < 6) await _createSyncErrors(db);
+          if (oldVersion < 7) await _addDeliveryDetails(db);
         },
       ),
     );
@@ -607,6 +678,20 @@ class LocalConsultationRepository {
   Future<void> close() async {
     await _database?.close();
     _database = null;
+  }
+}
+
+Future<void> _addDeliveryDetails(Database db) async {
+  for (final column in [
+    'guest_access_token TEXT',
+    'case_id TEXT',
+    'case_status TEXT',
+    'case_updated_at TEXT',
+    'sync_attempts INTEGER NOT NULL DEFAULT 0',
+    'next_sync_at TEXT',
+    'sync_error TEXT',
+  ]) {
+    await db.execute('ALTER TABLE consultations ADD COLUMN $column');
   }
 }
 

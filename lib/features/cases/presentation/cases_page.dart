@@ -666,7 +666,9 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppTheme.borderLight, width: 1.2),
                   ),
-                  child: ListTile(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 4,
@@ -702,6 +704,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                               builder: (_) => CaseGuidancePage(answer: answer),
                             ),
                           ),
+                  ),
                   ),
                 ),
                 const SizedBox(height: 14),

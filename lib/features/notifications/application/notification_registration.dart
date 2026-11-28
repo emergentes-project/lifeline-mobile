@@ -112,8 +112,12 @@ class NotificationRegistration {
     required bool helpRequested,
     required bool confirmed,
     required String? consultationId,
+    String? consultationAccessToken,
   }) {
-    if (!helpRequested || !confirmed || deviceToken.isEmpty) {
+    if (!helpRequested ||
+        !confirmed ||
+        deviceToken.isEmpty ||
+        consultationAccessToken?.isNotEmpty != true) {
       return Future.value(false);
     }
     final id = consultationId;
@@ -122,6 +126,7 @@ class NotificationRegistration {
       scope: 'guest:$id',
       deviceToken: deviceToken,
       consultationId: id,
+      consultationAccessToken: consultationAccessToken,
     );
   }
 
@@ -147,11 +152,37 @@ class NotificationRegistration {
     await sent.forget(deviceToken);
   }
 
+  Future<void> revokeGuest({
+    required String deviceToken,
+    required String consultationId,
+    required String consultationAccessToken,
+  }) async {
+    try {
+      await client
+          .delete(
+            _uri('/api/v1/notification-tokens'),
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Consultation-Token': consultationAccessToken,
+            },
+            body: jsonEncode({
+              'token': deviceToken,
+              'consultationId': consultationId,
+            }),
+          )
+          .timeout(timeout);
+    } catch (_) {
+      // Local pending consultations remain intact even if revocation cannot reach the server.
+    }
+    await sent.forget(deviceToken);
+  }
+
   Future<bool> _post({
     required String scope,
     required String deviceToken,
     String? accessToken,
     String? consultationId,
+    String? consultationAccessToken,
   }) async {
     if (await sent.matches(scope, deviceToken)) return false;
     final body = <String, dynamic>{
@@ -161,6 +192,9 @@ class NotificationRegistration {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (accessToken != null) {
       headers['Authorization'] = 'Bearer $accessToken';
+    }
+    if (consultationAccessToken != null) {
+      headers['X-Consultation-Token'] = consultationAccessToken;
     }
     try {
       final response = await client

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import '../../../core/config/api_config.dart';
 import '../data/local/local_consultation_repository.dart';
 import '../domain/models/saved_consultation.dart';
+import '../domain/models/consultation_guidance.dart';
 
 class ConsultationSyncAttempt {
   const ConsultationSyncAttempt({
@@ -15,12 +16,14 @@ class ConsultationSyncAttempt {
     required this.syncStatus,
     this.backendConsultationId,
     this.errorMessage,
+    this.retryable = true,
   });
 
   final int localId;
   final String syncStatus;
   final String? backendConsultationId;
   final String? errorMessage;
+  final bool retryable;
 }
 
 class ConsultationSyncService {
@@ -37,23 +40,99 @@ class ConsultationSyncService {
   final http.Client client;
   final String baseUrl;
   final Duration timeout;
+  final _inFlight = <String, Future<List<ConsultationSyncAttempt>>>{};
+  final _guestRefreshAfter = <String, DateTime>{};
 
   Future<List<ConsultationSyncAttempt>> syncPending({
     required String ownerKey,
     String? citizenUserId,
+    String? accessToken,
+    bool forceRetry = true,
+  }) => _inFlight.putIfAbsent(
+    ownerKey,
+    () =>
+        _run(
+          ownerKey: ownerKey,
+          citizenUserId: citizenUserId,
+          accessToken: accessToken,
+          forceRetry: forceRetry,
+        ).whenComplete(() {
+          _inFlight.remove(ownerKey);
+        }),
+  );
+
+  Future<List<ConsultationSyncAttempt>> _run({
+    required String ownerKey,
+    String? citizenUserId,
+    String? accessToken,
+    required bool forceRetry,
   }) async {
+    await repository.recoverInterrupted(ownerKey);
     final rows = await repository.list(ownerKey: ownerKey);
     final attempts = <ConsultationSyncAttempt>[];
     for (final row in rows) {
-      if (!_isFinalized(row)) continue;
-      attempts.add(await _syncOne(row, ownerKey, citizenUserId));
+      if (!_isFinalized(row, forceRetry: forceRetry)) continue;
+      if (!forceRetry &&
+          row.nextSyncAt?.isAfter(DateTime.now().toUtc()) == true) {
+        continue;
+      }
+      await repository.updateDelivery(
+        row.id,
+        ownerKey: ownerKey,
+        syncStatus: 'sending',
+      );
+      ConsultationSyncAttempt result;
+      try {
+        result = await _syncOne(row, ownerKey, citizenUserId, accessToken);
+      } catch (_) {
+        result = ConsultationSyncAttempt(
+          localId: row.id,
+          syncStatus: 'pending',
+          backendConsultationId: row.backendConsultationId,
+          errorMessage: 'No se pudo completar el envío. Se volverá a intentar.',
+        );
+      }
+      final confirmed = result.syncStatus == 'confirmed';
+      final status = confirmed
+          ? 'confirmed'
+          : result.retryable
+          ? 'pending'
+          : 'failed';
+      final attemptCount = row.syncAttempts + 1;
+      final delaySeconds = (5 * (1 << attemptCount.clamp(0, 8).toInt()))
+          .clamp(5, 900)
+          .toInt();
+      await repository.updateDelivery(
+        row.id,
+        ownerKey: ownerKey,
+        syncStatus: status,
+        backendConsultationId: result.backendConsultationId,
+        syncAttempts: attemptCount,
+        nextSyncAt: confirmed || !result.retryable
+            ? null
+            : DateTime.now().toUtc().add(Duration(seconds: delaySeconds)),
+        syncError: confirmed
+            ? null
+            : result.errorMessage ?? 'Pendiente de conexión con el servidor.',
+      );
+      attempts.add(
+        ConsultationSyncAttempt(
+          localId: row.id,
+          syncStatus: status,
+          backendConsultationId: result.backendConsultationId,
+          errorMessage: result.errorMessage,
+          retryable: result.retryable,
+        ),
+      );
     }
     return attempts;
   }
 
-  bool _isFinalized(SavedConsultation row) =>
-      row.syncStatus == 'pending' &&
-      row.guidance?.isReady == true &&
+  bool _isFinalized(SavedConsultation row, {bool forceRetry = false}) =>
+      (row.syncStatus == 'pending' ||
+          (forceRetry && row.syncStatus == 'failed')) &&
+      (row.guidance?.isReady == true ||
+          (row.draft.helpRequested && row.guidance != null)) &&
       row.mobileConsultationId.isNotEmpty &&
       row.idempotencyKey.isNotEmpty;
 
@@ -61,24 +140,27 @@ class ConsultationSyncService {
     SavedConsultation row,
     String ownerKey,
     String? citizenUserId,
+    String? accessToken,
   ) async {
     var backendId = row.backendConsultationId;
     if (backendId == null || backendId.isEmpty) {
-      final sent = await _postConsultation(row, citizenUserId);
+      final sent = await _postConsultation(row, citizenUserId, accessToken);
       if (sent.backendId == null) {
         await _remember(row, 'post_consultation', sent);
         return ConsultationSyncAttempt(
           localId: row.id,
           syncStatus: 'pending',
           errorMessage: sent.errorMessage,
+          retryable: sent.retryable,
         );
       }
       backendId = sent.backendId;
       final saved = await _saveDelivery(
         row,
         ownerKey: ownerKey,
-        syncStatus: 'pending',
+        syncStatus: 'sending',
         backendConsultationId: backendId,
+        guestAccessToken: sent.guestAccessToken,
       );
       if (!saved) {
         return ConsultationSyncAttempt(
@@ -127,6 +209,7 @@ class ConsultationSyncService {
         syncStatus: 'pending',
         backendConsultationId: backendId,
         errorMessage: photoProblem,
+        retryable: false,
       );
     }
 
@@ -142,6 +225,7 @@ class ConsultationSyncService {
         syncStatus: 'pending',
         backendConsultationId: backendId,
         errorMessage: uploaded.errorMessage,
+        retryable: uploaded.retryable,
       );
     }
 
@@ -166,9 +250,113 @@ class ConsultationSyncService {
     );
   }
 
+  Future<void> refreshTracking({
+    required String ownerKey,
+    String? citizenUserId,
+    String? accessToken,
+  }) async {
+    final rows = await repository.list(ownerKey: ownerKey);
+    for (final row in rows) {
+      if (row.syncStatus != 'confirmed' ||
+          !row.draft.helpRequested ||
+          row.backendConsultationId == null) {
+        continue;
+      }
+      try {
+        String? guestToken;
+        final headers = <String, String>{};
+        if (citizenUserId != null) {
+          if (accessToken == null || accessToken.isEmpty) continue;
+          headers['Authorization'] = 'Bearer $accessToken';
+        } else {
+          guestToken = await _guestToken(row, ownerKey);
+          if (guestToken == null) continue;
+          headers['X-Consultation-Token'] = guestToken;
+        }
+        final uri = _uri(
+          '/api/v1/consultation-submissions/${row.backendConsultationId}/tracking',
+        );
+        var response = await client.get(uri, headers: headers).timeout(timeout);
+        if (citizenUserId == null &&
+            (response.statusCode == 404 || response.statusCode == 401)) {
+          guestToken = await _guestToken(row, ownerKey, renew: true);
+          if (guestToken == null) continue;
+          headers['X-Consultation-Token'] = guestToken;
+          response = await client.get(uri, headers: headers).timeout(timeout);
+        }
+        if (response.statusCode != 200) continue;
+        final data = jsonDecode(response.body);
+        if (data is! Map || data['consultationId'] != row.backendConsultationId) {
+          continue;
+        }
+        final status = data['caseStatus'];
+        if (status != null &&
+            !const [
+              'AVAILABLE',
+              'ASSIGNED',
+              'IN_PROGRESS',
+              'CLOSED',
+            ].contains(status)) {
+          continue;
+        }
+        final rawStamp = data['updatedAt'];
+        if (rawStamp is! String) continue;
+        final stamp = DateTime.tryParse(
+          RegExp(r'(Z|[+-]\d\d:\d\d)$').hasMatch(rawStamp)
+              ? rawStamp
+              : '${rawStamp}Z',
+        );
+        if (stamp == null) continue;
+        await repository.updateTracking(
+          row.id,
+          ownerKey: ownerKey,
+          caseId: data['caseId'] as String?,
+          caseStatus: status as String?,
+          updatedAt: stamp,
+        );
+      } on TimeoutException {
+        break;
+      } on SocketException {
+        break;
+      } on http.ClientException {
+        break;
+      } catch (_) {
+        // The last confirmed server state remains readable offline.
+      }
+    }
+  }
+
+  Future<String?> _guestToken(
+    SavedConsultation row,
+    String ownerKey, {
+    bool renew = false,
+  }) async {
+    if (!renew && row.guestAccessToken?.isNotEmpty == true) {
+      return row.guestAccessToken;
+    }
+    final next = _guestRefreshAfter[row.mobileConsultationId];
+    if (next != null && next.isAfter(DateTime.now().toUtc())) return null;
+    _guestRefreshAfter[row.mobileConsultationId] = DateTime.now().toUtc().add(
+      const Duration(minutes: 5),
+    );
+    final receipt = await _postConsultation(row, null, null);
+    if (receipt.backendId != row.backendConsultationId ||
+        receipt.guestAccessToken?.isNotEmpty != true) {
+      return null;
+    }
+    await repository.updateDelivery(
+      row.id,
+      ownerKey: ownerKey,
+      syncStatus: row.syncStatus,
+      guestAccessToken: receipt.guestAccessToken,
+    );
+    return receipt.guestAccessToken;
+  }
+
   Future<_HttpResult> _postConsultation(
     SavedConsultation row,
     String? citizenUserId,
+    String? accessToken,
   ) async {
     try {
       final response = await client
@@ -177,6 +365,8 @@ class ConsultationSyncService {
             headers: {
               'Content-Type': 'application/json',
               'Idempotency-Key': row.idempotencyKey,
+              if (accessToken != null && accessToken.isNotEmpty)
+                'Authorization': 'Bearer $accessToken',
             },
             body: jsonEncode(_body(row, citizenUserId)),
           )
@@ -192,7 +382,13 @@ class ConsultationSyncService {
                 'El servidor no devolvió el identificador de la consulta.',
           );
         }
-        return _HttpResult(backendId: backendId);
+        final payload = jsonDecode(response.body);
+        return _HttpResult(
+          backendId: backendId,
+          guestAccessToken: payload is Map
+              ? payload['guestAccessToken'] as String?
+              : null,
+        );
       }
       if (response.statusCode == HttpStatus.badRequest ||
           response.statusCode == HttpStatus.conflict) {
@@ -258,6 +454,7 @@ class ConsultationSyncService {
           httpStatus: response.statusCode,
           errorMessage:
               'La foto no se adjuntó. Se reintentará sobre la misma consulta.',
+          retryable: true,
         );
       }
       if (response.statusCode == HttpStatus.badRequest ||
@@ -288,6 +485,7 @@ class ConsultationSyncService {
     required String ownerKey,
     required String syncStatus,
     String? backendConsultationId,
+    String? guestAccessToken,
   }) async {
     try {
       await repository.updateDelivery(
@@ -295,6 +493,7 @@ class ConsultationSyncService {
         ownerKey: ownerKey,
         syncStatus: syncStatus,
         backendConsultationId: backendConsultationId,
+        guestAccessToken: guestAccessToken,
       );
       return true;
     } catch (_) {
@@ -346,7 +545,7 @@ class ConsultationSyncService {
     }
   }
 
-  _HttpResult _failed(String type, {int? httpStatus, String? errorMessage}) {
+  _HttpResult _failed(String type, {int? httpStatus, String? errorMessage, bool? retryable}) {
     final keepsScreenText =
         type == 'timeout' || type == 'network' || type == 'http_5xx';
     return _HttpResult(
@@ -354,6 +553,7 @@ class ConsultationSyncService {
       failureType: type,
       httpStatus: httpStatus,
       failureMessage: _defaultFailureMessage(type, httpStatus),
+      retryableOverride: retryable,
     );
   }
 
@@ -410,7 +610,12 @@ class ConsultationSyncService {
             },
       'answer': {
         'guidanceText': guidance.fullTextForProfessional,
-        'guidanceStatus': 'GENERATED',
+        'guidanceStatus': switch (guidance.status) {
+          GuidanceStatus.ready => 'GENERATED',
+          GuidanceStatus.needsDescription ||
+          GuidanceStatus.noEvidence => 'INSUFFICIENT_INFO',
+          GuidanceStatus.modelUnavailable || GuidanceStatus.failed => 'FAILED',
+        },
         'preliminaryPriority': guidance.preliminaryPriority?.name.toUpperCase(),
         'professionalHelpRecommended':
             guidance.professionalHelpRecommended ?? false,
@@ -484,6 +689,8 @@ class _HttpResult {
     this.failureType,
     this.httpStatus,
     this.failureMessage,
+    this.guestAccessToken,
+    this.retryableOverride,
   });
 
   final String? backendId;
@@ -492,4 +699,13 @@ class _HttpResult {
   final String? failureType;
   final int? httpStatus;
   final String? failureMessage;
+  final String? guestAccessToken;
+  final bool? retryableOverride;
+  bool get retryable =>
+      retryableOverride ?? (httpStatus == null ||
+      httpStatus == 408 ||
+      httpStatus == 429 ||
+      (httpStatus! >= 500 && httpStatus! <= 599) ||
+      httpStatus == 200 ||
+      httpStatus == 201);
 }

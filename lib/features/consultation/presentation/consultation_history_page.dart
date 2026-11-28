@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/presentation/system_status_bar.dart';
@@ -31,11 +32,27 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
   final deliveryErrors = <int, String>{};
   List<SyncFailureCount> failureCounts = const [];
   bool onlyPending = false;
+  StreamSubscription<({String ownerKey, bool needsSync})>? _localChanges;
 
   @override
   void initState() {
     super.initState();
     consultations = load();
+    _localChanges = context.read<LocalConsultationRepository>().changes.listen((change) {
+      if (!mounted) return;
+      final auth = context.read<AuthCubit>().state;
+      if (auth.status != AuthStatus.guest && auth.status != AuthStatus.authenticated) return;
+      if (change.ownerKey != consultationOwnerKey(auth)) return;
+      final local = context.read<LocalConsultationRepository>().list(ownerKey: change.ownerKey,
+        knowledge: context.read<LocalMedicalKnowledgeRepository>());
+      setState(() { consultations = local; });
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_localChanges?.cancel() ?? Future<void>.value());
+    super.dispose();
   }
 
   Future<List<SavedConsultation>> load() async {
@@ -56,8 +73,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
         final outcomes = await sync.syncPending(
           ownerKey: ownerKey,
           citizenUserId: auth.status == AuthStatus.authenticated
-              ? auth.user?.id
+              && auth.user?.isCitizen == true ? auth.user?.id
               : null,
+          accessToken: auth.user?.token,
         );
         deliveryErrors
           ..clear()
@@ -91,7 +109,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
 
   String statusLabel(SavedConsultation item) {
     if (item.syncStatus == 'pending') return 'Por sincronizar';
-    if (item.syncStatus == 'confirmed') return 'Enviado';
+    if (item.syncStatus == 'sending') return 'Enviando';
+    if (item.syncStatus == 'failed') return 'Envío fallido';
+    if (item.syncStatus == 'confirmed') return 'Envío confirmado';
     final guidance = item.guidance;
     if (guidance == null) return 'Orientación pendiente';
     return switch (guidance.status) {
@@ -149,9 +169,9 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
           );
         }
         final allItems = snapshot.data ?? const <SavedConsultation>[];
-        final pendingCount = allItems.where((c) => c.syncStatus == 'pending').length;
+        final pendingCount = allItems.where((c) => c.deliveryPending || c.syncStatus == 'failed').length;
         final items = onlyPending
-            ? allItems.where((c) => c.syncStatus == 'pending').toList()
+            ? allItems.where((c) => c.deliveryPending || c.syncStatus == 'failed').toList()
             : allItems;
 
         return Column(
@@ -314,13 +334,14 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                                     ),
                                     const SizedBox(height: 12),
                                     // Badges row: Status pill + "Apoyo solicitado" (Wireframe C-07)
-                                    Row(
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
                                       children: [
                                         StatusPill(
                                           label: statusLabel(item),
                                         ),
                                         if (item.draft.helpRequested) ...[
-                                          const SizedBox(width: 8),
                                           const StatusPill(
                                             label: 'Apoyo solicitado',
                                             isUrgent: true,
@@ -328,6 +349,12 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                                           ),
                                         ],
                                       ],
+                                    ),
+                                    if (item.caseStatusLabel != null) Padding(
+                                      padding: const EdgeInsets.only(top: 8), child: Text(item.caseStatusLabel!),
+                                    ),
+                                    if (item.syncStatus != 'confirmed' && item.syncError != null) Padding(
+                                      padding: const EdgeInsets.only(top: 8), child: Text(item.syncError!),
                                     ),
                                   ],
                                 ),

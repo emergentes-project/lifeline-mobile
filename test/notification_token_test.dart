@@ -63,18 +63,21 @@ void main() {
         helpRequested: true,
         confirmed: true,
         consultationId: 'backend-1',
+        consultationAccessToken: 'guest-proof',
       );
       final repeated = await registration.registerGuest(
         deviceToken: 'fcm-guest',
         helpRequested: true,
         confirmed: true,
         consultationId: 'backend-1',
+        consultationAccessToken: 'guest-proof',
       );
 
       expect(sent, isTrue);
       expect(repeated, isFalse);
       expect(calls, hasLength(1));
       expect(calls.single.headers['authorization'], isNull);
+      expect(calls.single.headers['x-consultation-token'], 'guest-proof');
       final body =
           jsonDecode(utf8.decode(calls.single.bodyBytes))
               as Map<String, dynamic>;
